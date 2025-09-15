@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { projectOperations, statusOperations, userOperations } from '../data/dataAccess';
 import type { Project, Status, User } from '../types';
 import StatusChangeModal from '../components/StatusChangeModal';
 import StatusHistory from '../components/StatusHistory';
+import UserTaskList from '../components/UserTaskList';
 import { AppContext } from '../context/AppContext';
 
 
@@ -13,7 +15,8 @@ const ProjectList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusModalProject, setStatusModalProject] = useState<Project | undefined>(undefined);
   const [historyProject, setHistoryProject] = useState<Project | undefined>(undefined);
-  const { currentUser, tasks, updateTask, isAdmin, workflows } = useContext(AppContext);
+  const [taskModalProject, setTaskModalProject] = useState<Project | undefined>(undefined);
+  const { currentUser, workflows, tasks } = useContext(AppContext);
 
   // Load data when component mounts
 
@@ -22,6 +25,15 @@ const ProjectList: React.FC = () => {
     setStatuses(statusOperations.getAll());
     setUsers(userOperations.getAll());
   }, []);
+
+  // Close modal on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setTaskModalProject(undefined);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [taskModalProject]);
 
   // Helper functions
   const getWorkflowForProject = (project: Project) => workflows.find((wf: any) => wf.id === project.workflowId);
@@ -92,15 +104,14 @@ const ProjectList: React.FC = () => {
           {filteredProjects.map(project => {
             const status = getStatusById(project.currentStatusId);
             const creator = getUserById(project.creator);
+            // workflow intentionally not used here; UserTaskList will compute relevant transitions
+            // Compute completed/required counts for compact summary
             const workflow = workflows.find((wf: any) => wf.id === project.workflowId);
-            // Find transitions from current status
             const possibleTransitions = workflow ? workflow.transitions.filter((tr: any) => tr.fromStatusId === project.currentStatusId) : [];
-            // Tasks for current status transitions (pending)
-            const pendingTasks = tasks.filter((task: any) =>
-              possibleTransitions.some((tr: any) => tr.id === task.transitionId) &&
-              !task.isCompleted &&
-              (task.assignedUserId === currentUser.id || isAdmin)
-            );
+            const relevantTransitionIds = possibleTransitions.map((t: any) => t.id);
+            const projectTasks = tasks.filter((task: any) => relevantTransitionIds.includes(task.transitionId));
+            const requiredCount = projectTasks.filter((t: any) => t.isRequired).length || projectTasks.length;
+            const completedCount = projectTasks.filter((t: any) => t.isCompleted).length;
 
             return (
               <div
@@ -152,41 +163,15 @@ const ProjectList: React.FC = () => {
                   {status?.name || 'Unknown Status'}
                 </div>
 
-                {/* Pending Tasks Section */}
-                {pendingTasks.length > 0 && (
-                  <div style={{ margin: '1.2rem 0 0.5rem 0', background: '#f5fafd', borderRadius: 6, padding: '1rem', border: '1px solid #e3f2fd' }}>
-                    <div style={{ fontWeight: 600, color: '#1976d2', marginBottom: 8 }}>Pending Tasks for Next Transitions</div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', background: 'none' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ textAlign: 'left', padding: '0.5rem' }}>Task</th>
-                          <th style={{ textAlign: 'left', padding: '0.5rem' }}>Goal</th>
-                          <th style={{ textAlign: 'left', padding: '0.5rem' }}>Deadline</th>
-                          <th style={{ textAlign: 'center', padding: '0.5rem' }}>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pendingTasks.map((task: any) => (
-                          <tr key={task.id} style={{ borderBottom: '1px solid #e3e3e3' }}>
-                            <td style={{ padding: '0.5rem' }}>{task.name}</td>
-                            <td style={{ padding: '0.5rem' }}>{task.description}</td>
-                            <td style={{ padding: '0.5rem' }}>{task.deadline ? (task.deadline instanceof Date ? task.deadline.toLocaleDateString() : new Date(task.deadline).toLocaleDateString()) : '-'}</td>
-                            <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                              <button
-                                onClick={() => updateTask({ ...task, isCompleted: true, completedAt: new Date(), completedBy: currentUser.id })}
-                                style={{ background: '#388e3c', color: '#fff', border: 'none', borderRadius: 4, padding: '0.35rem 1.1rem', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 1px 4px #388e3c22', transition: 'background 0.15s' }}
-                                onMouseOver={e => (e.currentTarget.style.background = '#256029')}
-                                onMouseOut={e => (e.currentTarget.style.background = '#388e3c')}
-                              >
-                                Mark as Done
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                {/* Compact tasks summary - click to open modal with details */}
+                <div style={{ margin: '0.6rem 0' }}>
+                  <button
+                    onClick={() => setTaskModalProject(project)}
+                    style={{ background: 'transparent', border: 'none', color: '#1976d2', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    Completed tasks: {completedCount}/{requiredCount}
+                  </button>
+                </div>
 
                 {/* Project Metadata */}
                 <div style={{ 
@@ -267,6 +252,19 @@ const ProjectList: React.FC = () => {
           users={users}
           onClose={() => setHistoryProject(undefined)}
         />
+      )}
+      {/* Task details modal (portal) */}
+      {taskModalProject && createPortal(
+        <div className="modal" data-portal="task-list" onClick={(e) => { if (e.target === e.currentTarget) setTaskModalProject(undefined); }}>
+          <div className="task-form wide" role="dialog" aria-modal="true">
+            <h2 style={{ marginTop: 0, marginBottom: 8 }}>Pending Tasks for {taskModalProject.title}</h2>
+            <UserTaskList project={taskModalProject} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+              <button onClick={() => setTaskModalProject(undefined)} style={{ background: '#fff', color: '#1976d2', border: '1px solid #1976d2', borderRadius: 4, padding: '0.5rem 0.9rem', cursor: 'pointer', fontWeight: 600 }}>Close</button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
