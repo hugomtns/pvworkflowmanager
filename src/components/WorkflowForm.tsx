@@ -3,6 +3,11 @@ import { statusOperations } from '../data/dataAccess';
 import WorkflowCanvas from './WorkflowCanvas';
 import type { Workflow, Status } from '../types';
 
+interface WorkflowLayoutData {
+  statusPositions: { [statusId: string]: { x: number; y: number } };
+  connections: Array<{ fromStatusId: string; toStatusId: string }>;
+}
+
 interface WorkflowFormProps {
   workflow?: Workflow; // undefined for create, Workflow object for edit
   onSave: (workflowData: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -21,10 +26,14 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [availableStatuses, setAvailableStatuses] = useState<Status[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<Status[]>([]);
+  const [workflowLayout, setWorkflowLayout] = useState<WorkflowLayoutData>({
+    statusPositions: {},
+    connections: []
+  });
 
   const entityTypes = ['project', 'campaign', 'design', 'file'];
 
-  // Load available statuses when component mounts or entity type changes
+  // Load available statuses and initialize layout when component mounts or entity type changes
   useEffect(() => {
     const allStatuses = statusOperations.getAll();
     const filteredStatuses = allStatuses.filter(status => 
@@ -37,7 +46,19 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
       formData.statuses.includes(status.id)
     );
     setSelectedStatuses(workflowStatuses);
-  }, [formData.entityType, formData.statuses]);
+
+    // Initialize workflow layout from existing workflow transitions
+    if (workflow?.transitions) {
+      const connections = workflow.transitions.map(t => ({
+        fromStatusId: t.fromStatusId,
+        toStatusId: t.toStatusId
+      }));
+      setWorkflowLayout(prev => ({
+        ...prev,
+        connections
+      }));
+    }
+  }, [formData.entityType, formData.statuses, workflow]);
 
   // Validate form data
   const validateForm = (): boolean => {
@@ -67,12 +88,11 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
     e.preventDefault();
     
     if (validateForm()) {
-      // Create basic transitions (linear flow for now - we'll improve this)
-      const statusIds = selectedStatuses.map(s => s.id);
-      const transitions = statusIds.slice(0, -1).map((fromStatusId, index) => ({
+      // Create transitions based on canvas connections
+      const transitions = workflowLayout.connections.map((conn, index) => ({
         id: `trans-${Date.now()}-${index}`,
-        fromStatusId,
-        toStatusId: statusIds[index + 1],
+        fromStatusId: conn.fromStatusId,
+        toStatusId: conn.toStatusId,
         requiresApproval: false,
         approverRoles: [],
         approverUserIds: [],
@@ -82,18 +102,36 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
 
       onSave({
         ...formData,
-        statuses: statusIds,
+        statuses: selectedStatuses.map(s => s.id),
         transitions
       });
     }
   };
 
-  // Handle status selection from canvas
+  // Handle status selection from palette
   const handleStatusSelectionChange = (statuses: Status[]) => {
     setSelectedStatuses(statuses);
     setFormData(prev => ({
       ...prev,
       statuses: statuses.map(s => s.id)
+    }));
+  };
+
+  // Handle canvas updates
+  const handleStatusMove = (statusId: string, x: number, y: number) => {
+    setWorkflowLayout(prev => ({
+      ...prev,
+      statusPositions: {
+        ...prev.statusPositions,
+        [statusId]: { x, y }
+      }
+    }));
+  };
+
+  const handleConnectionsChange = (connections: Array<{ id: string; fromStatusId: string; toStatusId: string }>) => {
+    setWorkflowLayout(prev => ({
+      ...prev,
+      connections
     }));
   };
 
@@ -258,7 +296,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
                 {/* Status Palette */}
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                    Available Statuses (drag into canvas):
+                    Available Statuses (click to add/remove):
                   </div>
                   <div style={{ 
                     display: 'flex', 
@@ -315,14 +353,16 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
                   borderRadius: '8px',
                   backgroundColor: 'white'
                 }}>
+                  {/* 
+                    The 'initialConnections' prop is not defined in WorkflowCanvasProps.
+                    Remove it to fix the type error.
+                  */}
                   <WorkflowCanvas 
                     statuses={selectedStatuses}
                     width={900}
                     height={400}
-                    onStatusMove={(statusId, x, y) => {
-                      console.log(`Status ${statusId} moved to (${x}, ${y})`);
-                      // TODO: Save positions for workflow layout
-                    }}
+                    onStatusMove={handleStatusMove}
+                    onConnectionsChange={handleConnectionsChange}
                   />
                 </div>
                 

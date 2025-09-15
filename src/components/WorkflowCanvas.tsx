@@ -355,16 +355,15 @@ const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({
         fill={node.status.color}
       />
       
-      {/* Status Name ONLY - No Description */}
+      {/* Status Name - Top left, next to colored circle */}
       <Text
-        x={node.x + nodeWidth / 2}
-        y={node.y + nodeHeight / 2}
+        x={node.x + 30}
+        y={node.y + 8}
         text={node.status.name}
         fontSize={12}
         fontStyle="bold"
         fill="#333"
-        width={nodeWidth - 20}
-        align="center"
+        width={nodeWidth - 40}
       />
       
       {/* Connection Handles - Always visible on hover */}
