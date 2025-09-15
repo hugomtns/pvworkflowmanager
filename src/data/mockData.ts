@@ -1,7 +1,7 @@
-import type { Status, Workflow, Project, User, Transition, StatusHistoryEntry } from '../types';
+import type { Status, Workflow, Project, User, Transition } from '../types';
 
 // Generate unique IDs
-const generateId = (): string => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+// const generateId = (): string => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 // Mock Users
 export const createMockUsers = (): User[] => [
@@ -21,6 +21,18 @@ export const createMockUsers = (): User[] => [
     id: 'user-3',
     name: 'Mike Technician',
     email: 'mike@pvcompany.com',
+    role: 'user'
+  },
+  {
+    id: 'user-4',
+    name: 'Emily Designer',
+    email: 'emily@pvcompany.com',
+    role: 'user'
+  },
+  {
+    id: 'user-5',
+    name: 'Oliver Analyst',
+    email: 'oliver@pvcompany.com',
     role: 'user'
   }
 ];
@@ -200,6 +212,125 @@ export const createMockProjects = (): Project[] => [
         userId: 'user-1',
         timestamp: new Date('2024-01-10'),
         comment: 'Large community project in planning phase',
+        tasksCompleted: []
+      }
+    ]
+  },
+  {
+    id: 'project-4',
+    title: 'Industrial Solar - North Plant',
+    description: '75kW industrial solar installation for North Plant facility',
+    creator: 'user-4',
+    createdAt: new Date('2024-02-12'),
+    lastEditedAt: new Date('2024-02-14'),
+    currentStatusId: 'status-3',
+    workflowId: 'workflow-1',
+    statusHistory: [
+      {
+        id: 'hist-5',
+        toStatusId: 'status-1',
+        userId: 'user-4',
+        timestamp: new Date('2024-02-12'),
+        comment: 'Project created for industrial site',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-6',
+        fromStatusId: 'status-1',
+        toStatusId: 'status-2',
+        userId: 'user-4',
+        timestamp: new Date('2024-02-13'),
+        comment: 'Planning to design review',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-7',
+        fromStatusId: 'status-2',
+        toStatusId: 'status-3',
+        userId: 'user-4',
+        timestamp: new Date('2024-02-14'),
+        comment: 'Design approved, awaiting customer approval',
+        tasksCompleted: []
+      }
+    ]
+  },
+  {
+    id: 'project-5',
+    title: 'Retail Chain - City Center',
+    description: '30kW solar installation for retail chain roof',
+    creator: 'user-5',
+    createdAt: new Date('2024-03-01'),
+    lastEditedAt: new Date('2024-03-03'),
+    currentStatusId: 'status-2',
+    workflowId: 'workflow-1',
+    statusHistory: [
+      {
+        id: 'hist-8',
+        toStatusId: 'status-1',
+        userId: 'user-5',
+        timestamp: new Date('2024-03-01'),
+        comment: 'Kickoff meeting completed',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-9',
+        fromStatusId: 'status-1',
+        toStatusId: 'status-2',
+        userId: 'user-5',
+        timestamp: new Date('2024-03-03'),
+        comment: 'Moving to design review',
+        tasksCompleted: []
+      }
+    ]
+  },
+  {
+    id: 'project-6',
+    title: 'Municipal Building - West Side',
+    description: '40kW installation for municipal building',
+    creator: 'user-2',
+    createdAt: new Date('2024-02-18'),
+    lastEditedAt: new Date('2024-02-20'),
+    currentStatusId: 'status-5',
+    workflowId: 'workflow-1',
+    statusHistory: [
+      {
+        id: 'hist-10',
+        toStatusId: 'status-1',
+        userId: 'user-2',
+        timestamp: new Date('2024-02-18'),
+        comment: 'Project created',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-11',
+        fromStatusId: 'status-1',
+        toStatusId: 'status-2',
+        userId: 'user-2',
+        timestamp: new Date('2024-02-18'),
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-12',
+        fromStatusId: 'status-2',
+        toStatusId: 'status-3',
+        userId: 'user-2',
+        timestamp: new Date('2024-02-19'),
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-13',
+        fromStatusId: 'status-3',
+        toStatusId: 'status-4',
+        userId: 'user-2',
+        timestamp: new Date('2024-02-19'),
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-14',
+        fromStatusId: 'status-4',
+        toStatusId: 'status-5',
+        userId: 'user-2',
+        timestamp: new Date('2024-02-20'),
         tasksCompleted: []
       }
     ]
