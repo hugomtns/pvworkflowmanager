@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { workflowOperations, statusOperations, projectOperations } from '../data/dataAccess';
 import WorkflowForm from '../components/WorkflowForm';
+import TransitionList from '../components/TransitionList';
 import type { Workflow, Status } from '../types';
 
 const WorkflowManagement: React.FC = () => {
@@ -9,6 +10,7 @@ const WorkflowManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | undefined>(undefined);
+  const [transitionsWorkflow, setTransitionsWorkflow] = useState<Workflow | undefined>(undefined);
 
   // Load data when component mounts
   useEffect(() => {
@@ -226,6 +228,20 @@ const WorkflowManagement: React.FC = () => {
                     Canvas
                   </button>
                   <button 
+                    onClick={() => setTransitionsWorkflow(workflow)}
+                    style={{
+                      backgroundColor: '#6a1b9a',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '3px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Transitions
+                  </button>
+                  <button 
                     onClick={() => handleDeleteWorkflow(workflow.id)}
                     style={{
                       backgroundColor: '#f44336',
@@ -334,6 +350,19 @@ const WorkflowManagement: React.FC = () => {
           workflow={editingWorkflow}
           onSave={handleSaveWorkflow}
           onCancel={handleCancelForm}
+        />
+      )}
+
+      {/* Transition List Modal */}
+      {transitionsWorkflow && (
+        <TransitionList
+          workflow={transitionsWorkflow}
+          allStatuses={statuses}
+          onClose={() => setTransitionsWorkflow(undefined)}
+          onUpdated={(updated) => {
+            setTransitionsWorkflow(updated);
+            loadWorkflows();
+          }}
         />
       )}
     </div>
