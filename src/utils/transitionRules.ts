@@ -1,8 +1,13 @@
-import type { Workflow, Transition, Status } from '../types';
+import type { Workflow, Transition, Status, Task } from '../types';
+import { taskOperations } from '../data/dataAccess';
 
 export interface NextTransitionOption {
   transition: Transition;
   toStatus: Status | undefined;
+  // Tasks that are incomplete and required for this transition
+  incompleteTasks?: Task[];
+  // whether the transition is blocked due to incomplete required tasks
+  blockedByTasks?: boolean;
 }
 
 export const getValidNextTransitions = (
@@ -18,7 +23,14 @@ export const getValidNextTransitions = (
   // Only include transitions where the target status is part of the workflow
   return candidates
     .filter(t => statusSet.has(t.toStatusId))
-    .map(t => ({ transition: t, toStatus: idToStatus[t.toStatusId] }));
+    .map(t => {
+      // find incomplete tasks for this transition
+      const incompleteTasks = taskOperations.getIncompleteByTransitionId(t.id) || [];
+      // consider only tasks that are marked as required (if that property exists on tasks)
+      const requiredIncomplete = incompleteTasks.filter(task => task.isRequired);
+      const blockedByTasks = requiredIncomplete.length > 0;
+      return { transition: t, toStatus: idToStatus[t.toStatusId], incompleteTasks: requiredIncomplete, blockedByTasks };
+    });
 };
 
 export const describeTransitionRequirements = (t: Transition, idToUserName?: Record<string, string>) => {
@@ -26,7 +38,8 @@ export const describeTransitionRequirements = (t: Transition, idToUserName?: Rec
   return {
     requiresApproval: t.requiresApproval,
     approverRoles: t.approverRoles || [],
-    approverUsers
+    approverUsers,
+    // task requirements will be resolved by callers via getValidNextTransitions which returns incompleteTasks
   };
 };
 

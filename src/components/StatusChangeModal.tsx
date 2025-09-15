@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import type { Project, Workflow, Status, User, Transition } from '../types';
 import { getValidNextTransitions, describeTransitionRequirements } from '../utils/transitionRules';
 import { canUserExecuteTransition } from '../utils/permissions';
 import type { NextTransitionOption } from '../utils/transitionRules';
+import { AppContext } from '../context/AppContext';
 
 interface StatusChangeModalProps {
   project: Project;
@@ -23,12 +24,16 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
 
   const selected = options.find(o => o.transition.id === selectedId);
 
+  const { users } = useContext(AppContext);
+
   const idToUserName = useMemo(() => {
-    // For requirement display only; names can be resolved by callers if needed later
-    return {} as Record<string, string>;
-  }, []);
+    const map: Record<string, string> = {};
+    users.forEach(u => { map[u.id] = u.name; });
+    return map;
+  }, [users]);
 
   const req = selected ? describeTransitionRequirements(selected.transition, idToUserName) : undefined;
+  const incompleteTasks = selected?.incompleteTasks || [];
 
   return (
     <div style={{
@@ -78,6 +83,21 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
                     </div>
                   </div>
                 )}
+
+                {/* Task blocking info */}
+                {selected.blockedByTasks ? (
+                  <div style={{ marginTop: 12, background: '#fff3f3', border: '1px solid #ffd6d6', padding: 8, borderRadius: 6 }}>
+                    <div style={{ fontWeight: 700, color: '#b71c1c', marginBottom: 6 }}>Blocked by incomplete required tasks</div>
+                    <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                      {incompleteTasks.map(task => (
+                        <li key={task.id} style={{ fontSize: '0.95rem', color: '#333' }}>
+                          {task.name} — <em style={{ color: '#555' }}>{idToUserName[task.assignedUserId] || task.assignedUserId}</em>
+                        </li>
+                      ))}
+                    </ul>
+                    <div style={{ fontSize: '0.9rem', color: '#666', marginTop: 8 }}>Complete the required tasks before performing this transition.</div>
+                  </div>
+                ) : null}
               </div>
             )}
           </>
@@ -93,7 +113,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
           <button onClick={onCancel} style={{ border: '1px solid #ddd', backgroundColor: 'white', padding: '0.5rem 0.75rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
           <button
-            disabled={!selected}
+            disabled={!selected || !!selected.blockedByTasks}
             onClick={() => {
               if (!selected) return;
               if (!currentUser) {
@@ -105,10 +125,14 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
                 setError(perm.reason || 'You are not allowed to perform this transition.');
                 return;
               }
+              if (selected.blockedByTasks) {
+                setError('Transition blocked: required tasks are incomplete.');
+                return;
+              }
               setError(undefined);
               onConfirm(selected.transition);
             }}
-            style={{ backgroundColor: '#9c27b0', color: 'white', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px', cursor: 'pointer', opacity: selected ? 1 : 0.6 }}
+            style={{ backgroundColor: '#9c27b0', color: 'white', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px', cursor: 'pointer', opacity: (!selected || !!selected.blockedByTasks) ? 0.6 : 1 }}
           >
             Confirm
           </button>
