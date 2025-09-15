@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { projectOperations, statusOperations, userOperations } from '../data/dataAccess';
-import type { Project, Status, User } from '../types';
+import React, { useState, useEffect, useContext } from 'react';
+import { projectOperations, statusOperations, userOperations, workflowOperations } from '../data/dataAccess';
+import type { Project, Status, User, Workflow } from '../types';
+import StatusChangeModal from '../components/StatusChangeModal';
+import StatusHistory from '../components/StatusHistory';
+import { AppContext } from '../context/AppContext';
 
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusModalProject, setStatusModalProject] = useState<Project | undefined>(undefined);
+  const [historyProject, setHistoryProject] = useState<Project | undefined>(undefined);
+  const { currentUser } = useContext(AppContext);
 
   // Load data when component mounts
   useEffect(() => {
@@ -14,6 +20,10 @@ const ProjectList: React.FC = () => {
     setStatuses(statusOperations.getAll());
     setUsers(userOperations.getAll());
   }, []);
+
+  const getWorkflowForProject = (project: Project): Workflow | undefined => {
+    return workflowOperations.getById(project.workflowId);
+  };
 
   // Helper function to get status by ID
   const getStatusById = (statusId: string): Status | undefined => {
@@ -162,11 +172,87 @@ const ProjectList: React.FC = () => {
                   <div>
                     <strong>Creator:</strong> {creator?.name || 'Unknown User'}
                   </div>
+                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => setStatusModalProject(project)}
+                      style={{
+                        backgroundColor: '#6a1b9a',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.4rem 0.6rem',
+                        borderRadius: '4px',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Change Status
+                    </button>
+                    <button
+                      onClick={() => setHistoryProject(project)}
+                      style={{
+                        backgroundColor: '#2196f3',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.4rem 0.6rem',
+                        borderRadius: '4px',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      View History
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {statusModalProject && (
+        <StatusChangeModal
+          project={statusModalProject}
+          workflow={getWorkflowForProject(statusModalProject)}
+          statuses={statuses}
+          currentUser={currentUser}
+          onCancel={() => setStatusModalProject(undefined)}
+          onConfirm={(transition) => {
+            const project = statusModalProject;
+            if (!project) return;
+            const updated = projectOperations.update(project.id, {
+              currentStatusId: transition.toStatusId,
+              lastEditedAt: new Date()
+            });
+            if (updated) {
+              // Append history entry
+              const historyEntry = {
+                id: `hist-${Date.now()}`,
+                fromStatusId: project.currentStatusId,
+                toStatusId: transition.toStatusId,
+                userId: currentUser?.id || 'user-unknown',
+                timestamp: new Date(),
+                comment: undefined,
+                tasksCompleted: [],
+                approvedBy: transition.requiresApproval ? (currentUser?.id || 'user-unknown') : undefined
+              };
+              const nextHistory = [...(updated.statusHistory || []), historyEntry];
+              projectOperations.update(project.id, { statusHistory: nextHistory });
+              setProjects(projectOperations.getAll());
+            } else {
+              alert('Failed to update project status.');
+            }
+            setStatusModalProject(undefined);
+          }}
+        />
+      )}
+
+      {historyProject && (
+        <StatusHistory
+          project={historyProject}
+          statuses={statuses}
+          users={users}
+          onClose={() => setHistoryProject(undefined)}
+        />
       )}
     </div>
   );

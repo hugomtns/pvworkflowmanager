@@ -1,5 +1,5 @@
 import type { Status, Workflow, Project, User } from '../types';
-import { saveToStorage, loadFromStorage, STORAGE_KEYS } from '../utils/localStorage';
+import { saveToStorage, loadFromStorage, STORAGE_KEYS, clearAllData } from '../utils/localStorage';
 import { 
   createMockUsers, 
   createMockStatuses, 
@@ -7,22 +7,47 @@ import {
   createMockProjects 
 } from './mockData';
 
-// Initialize data if localStorage is empty
+// Versioned data initialization so we can reseed when structure/content changes
+const DATA_VERSION_KEY = 'pvworkflow_data_version';
+const CURRENT_DATA_VERSION = '2';
+
+// Initialize data if localStorage is empty or version changed
 export const initializeData = (): void => {
-  // Check if data already exists
-  const existingStatuses = loadFromStorage<Status>(STORAGE_KEYS.STATUSES);
-  
-  if (existingStatuses.length === 0) {
-    // Seed initial data
-    saveToStorage(STORAGE_KEYS.USERS, createMockUsers());
-    saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
-    saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
-    saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
-    
-    console.log('Initial data seeded to localStorage');
-  } else {
-    console.log('Data already exists in localStorage');
+  try {
+    const version = localStorage.getItem(DATA_VERSION_KEY);
+    const existingStatuses = loadFromStorage<Status>(STORAGE_KEYS.STATUSES);
+
+    if (version !== CURRENT_DATA_VERSION || existingStatuses.length === 0) {
+      clearAllData();
+      saveToStorage(STORAGE_KEYS.USERS, createMockUsers());
+      saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
+      saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
+      saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+      localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+      console.log('Data reseeded to localStorage (version', CURRENT_DATA_VERSION, ')');
+    } else {
+      console.log('Data already up-to-date in localStorage (version', version, ')');
+    }
+  } catch (e) {
+    console.warn('Failed versioned init, falling back to basic init', e);
+    const existingStatuses = loadFromStorage<Status>(STORAGE_KEYS.STATUSES);
+    if (existingStatuses.length === 0) {
+      saveToStorage(STORAGE_KEYS.USERS, createMockUsers());
+      saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
+      saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
+      saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+    }
   }
+};
+
+export const reseedData = (): void => {
+  clearAllData();
+  saveToStorage(STORAGE_KEYS.USERS, createMockUsers());
+  saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
+  saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
+  saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+  localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+  console.log('Data manually reseeded');
 };
 
 // Status CRUD operations
