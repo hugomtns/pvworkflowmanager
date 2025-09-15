@@ -1,6 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { statusOperations } from '../data/dataAccess';
+import type { Status } from '../types';
 
 const StatusManagement: React.FC = () => {
+  const [statuses, setStatuses] = useState<Status[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Load statuses when component mounts
+  useEffect(() => {
+    setStatuses(statusOperations.getAll());
+  }, []);
+
+  // Filter statuses based on search term
+  const filteredStatuses = statuses.filter(status =>
+    status.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    status.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Format date for display
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString();
+  };
+
   return (
     <div>
       <div style={{ 
@@ -9,7 +30,7 @@ const StatusManagement: React.FC = () => {
         alignItems: 'center',
         marginBottom: '2rem'
       }}>
-        <h2 style={{ margin: 0 }}>Manage Statuses</h2>
+        <h2 style={{ margin: 0 }}>Manage Statuses ({filteredStatuses.length})</h2>
         <button style={{
           backgroundColor: '#4caf50',
           color: 'white',
@@ -22,15 +43,183 @@ const StatusManagement: React.FC = () => {
         </button>
       </div>
       
+      {/* Search Bar */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <input
+          type="text"
+          placeholder="Search statuses..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '0.75rem',
+            borderRadius: '4px',
+            border: '1px solid #ddd',
+            fontSize: '1rem'
+          }}
+        />
+      </div>
+
+      {/* Status Table */}
+      {filteredStatuses.length === 0 ? (
+        <div style={{
+          backgroundColor: '#f9f9f9',
+          padding: '2rem',
+          borderRadius: '8px',
+          textAlign: 'center'
+        }}>
+          <p>No statuses found.</p>
+        </div>
+      ) : (
+        <div style={{
+          backgroundColor: 'white',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          overflow: 'hidden'
+        }}>
+          {/* Table Header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '40px 1fr 120px 1fr 150px 120px 100px',
+            backgroundColor: '#f5f5f5',
+            padding: '1rem',
+            fontWeight: 'bold',
+            borderBottom: '1px solid #ddd'
+          }}>
+            <div>Color</div>
+            <div>Name</div>
+            <div>Entity Types</div>
+            <div>Description</div>
+            <div>Created</div>
+            <div>Updated</div>
+            <div>Actions</div>
+          </div>
+
+          {/* Table Rows */}
+          {filteredStatuses.map((status, index) => (
+            <div
+              key={status.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '40px 1fr 120px 1fr 150px 120px 100px',
+                padding: '1rem',
+                borderBottom: index < filteredStatuses.length - 1 ? '1px solid #eee' : 'none',
+                backgroundColor: index % 2 === 0 ? 'white' : '#fafafa'
+              }}
+            >
+              {/* Color Indicator */}
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: status.color,
+                borderRadius: '50%',
+                border: '2px solid white',
+                boxShadow: '0 0 0 1px #ddd'
+              }} />
+
+              {/* Status Name */}
+              <div style={{
+                fontWeight: 'bold',
+                color: '#333'
+              }}>
+                {status.name}
+              </div>
+
+              {/* Entity Types */}
+              <div>
+                {status.entityTypes.map(type => (
+                  <span
+                    key={type}
+                    style={{
+                      display: 'inline-block',
+                      backgroundColor: '#e3f2fd',
+                      color: '#1976d2',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      marginRight: '0.25rem',
+                      marginBottom: '0.25rem'
+                    }}
+                  >
+                    {type}
+                  </span>
+                ))}
+              </div>
+
+              {/* Description */}
+              <div style={{
+                color: '#666',
+                fontSize: '0.9rem'
+              }}>
+                {status.description}
+              </div>
+
+              {/* Created Date */}
+              <div style={{
+                fontSize: '0.8rem',
+                color: '#888'
+              }}>
+                {formatDate(status.createdAt)}
+              </div>
+
+              {/* Updated Date */}
+              <div style={{
+                fontSize: '0.8rem',
+                color: '#888'
+              }}>
+                {formatDate(status.updatedAt)}
+              </div>
+
+              {/* Actions */}
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem'
+              }}>
+                <button
+                  style={{
+                    backgroundColor: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '3px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  style={{
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '3px',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Usage Information */}
       <div style={{
-        backgroundColor: '#f9f9f9',
-        padding: '2rem',
+        marginTop: '2rem',
+        padding: '1rem',
+        backgroundColor: '#e8f5e8',
         borderRadius: '8px',
-        textAlign: 'center'
+        border: '1px solid #4caf50'
       }}>
-        <p>Status management interface goes here.</p>
-        <p style={{ color: '#666', fontSize: '0.9rem' }}>
-          Coming up: Status list, color picker, entity type selection
+        <h4 style={{ margin: '0 0 0.5rem 0', color: '#2e7d32' }}>
+          Status Usage Information
+        </h4>
+        <p style={{ margin: 0, fontSize: '0.9rem', color: '#388e3c' }}>
+          Coming up: Show which workflows use each status and how many projects are currently in each status.
         </p>
       </div>
     </div>
