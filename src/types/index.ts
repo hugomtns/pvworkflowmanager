@@ -97,4 +97,20 @@ export interface Status {
     setCurrentUser: (user: User) => void;
     userRole: UserRole;
     setUserRole: (role: UserRole) => void;
+
+    // Task Management additions
+    tasks: Task[];
+    setTasks: (tasks: Task[]) => void;
+    addTask: (task: Task) => void;
+    updateTask: (task: Task) => void;
+    deleteTask: (taskId: string) => void;
+
+    workflows: Workflow[];
+    setWorkflows: (workflows: Workflow[]) => void;
+    transitions: Transition[];
+    setTransitions: (transitions: Transition[]) => void;
+    users: User[];
+    setUsers: (users: User[]) => void;
+
+    isAdmin: boolean;
   }

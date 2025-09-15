@@ -94,6 +94,16 @@ const Layout: React.FC<LayoutProps> = ({ userRole, onRoleChange }) => {
               >
                 Manage Workflows
               </Link>
+              <Link 
+                to="/admin/tasks" 
+                style={{ 
+                  textDecoration: 'none', 
+                  color: '#1976d2',
+                  fontWeight: 'bold'
+                }}
+              >
+                Task Management
+              </Link>
             </>
           )}
         </div>
