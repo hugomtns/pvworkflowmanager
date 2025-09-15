@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, Outlet } from 'react-router-dom';
+import { reseedData } from '../data/dataAccess';
 
 interface LayoutProps {
   userRole: 'admin' | 'user';
@@ -37,6 +38,19 @@ const Layout: React.FC<LayoutProps> = ({ userRole, onRoleChange }) => {
             <option value="user">User</option>
             <option value="admin">Admin</option>
           </select>
+          <button
+            onClick={() => { reseedData(); window.location.reload(); }}
+            style={{
+              backgroundColor: 'white',
+              color: '#1976d2',
+              border: '1px solid #bbdefb',
+              padding: '0.4rem 0.6rem',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Reset Data
+          </button>
         </div>
       </header>
 
