@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { statusOperations } from '../data/dataAccess';
 import type { Status } from '../types';
+import StatusForm from '../components/StatusForm';
 
 const StatusManagement: React.FC = () => {
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingStatus, setEditingStatus] = useState<Status | undefined>(undefined);
 
   // Load statuses when component mounts
   useEffect(() => {
@@ -22,6 +25,53 @@ const StatusManagement: React.FC = () => {
     return date.toLocaleDateString();
   };
 
+  // Handlers for Create/Edit/Delete and Form actions
+  const handleCreateClick = (): void => {
+    setEditingStatus(undefined);
+    setShowForm(true);
+  };
+
+  const handleEditClick = (status: Status): void => {
+    setEditingStatus(status);
+    setShowForm(true);
+  };
+
+  const handleDeleteClick = (id: string): void => {
+    // Simple confirmation; can be replaced by a nicer modal later
+    const confirmed = window.confirm('Delete this status? This action cannot be undone.');
+    if (!confirmed) return;
+
+    const success = statusOperations.delete(id);
+    if (success) {
+      setStatuses(statusOperations.getAll());
+    } else {
+      alert('Failed to delete status.');
+    }
+  };
+
+  const handleSaveStatus = (statusData: Omit<Status, 'id' | 'createdAt' | 'updatedAt'>): void => {
+    if (editingStatus) {
+      // Update existing
+      const updated = statusOperations.update(editingStatus.id, statusData);
+      if (!updated) {
+        alert('Failed to update status.');
+        return;
+      }
+    } else {
+      // Create new
+      statusOperations.create(statusData);
+    }
+
+    setStatuses(statusOperations.getAll());
+    setShowForm(false);
+    setEditingStatus(undefined);
+  };
+
+  const handleCancelForm = (): void => {
+    setShowForm(false);
+    setEditingStatus(undefined);
+  };
+
   return (
     <div>
       <div style={{ 
@@ -31,7 +81,7 @@ const StatusManagement: React.FC = () => {
         marginBottom: '2rem'
       }}>
         <h2 style={{ margin: 0 }}>Manage Statuses ({filteredStatuses.length})</h2>
-        <button style={{
+        <button onClick={handleCreateClick} style={{
           backgroundColor: '#4caf50',
           color: 'white',
           border: 'none',
@@ -176,6 +226,7 @@ const StatusManagement: React.FC = () => {
                 gap: '0.5rem'
               }}>
                 <button
+                  onClick={() => handleEditClick(status)}
                   style={{
                     backgroundColor: '#2196f3',
                     color: 'white',
@@ -189,6 +240,7 @@ const StatusManagement: React.FC = () => {
                   Edit
                 </button>
                 <button
+                  onClick={() => handleDeleteClick(status.id)}
                   style={{
                     backgroundColor: '#f44336',
                     color: 'white',
@@ -222,6 +274,15 @@ const StatusManagement: React.FC = () => {
           Coming up: Show which workflows use each status and how many projects are currently in each status.
         </p>
       </div>
+
+      {/* Status Form Modal */}
+      {showForm && (
+        <StatusForm
+          status={editingStatus}
+          onSave={handleSaveStatus}
+          onCancel={handleCancelForm}
+        />
+      )}
     </div>
   );
 };
