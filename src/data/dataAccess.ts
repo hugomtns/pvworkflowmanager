@@ -1,15 +1,16 @@
-import type { Status, Workflow, Project, User } from '../types';
+import type { Status, Workflow, Project, User, Task } from '../types';
 import { saveToStorage, loadFromStorage, STORAGE_KEYS, clearAllData } from '../utils/localStorage';
 import { 
   createMockUsers, 
   createMockStatuses, 
   createMockWorkflows, 
-  createMockProjects 
+  createMockProjects,
+  createMockTasks // New for Epic 7
 } from './mockData';
 
 // Versioned data initialization so we can reseed when structure/content changes
 const DATA_VERSION_KEY = 'pvworkflow_data_version';
-const CURRENT_DATA_VERSION = '2';
+const CURRENT_DATA_VERSION = '3'; // Updated for Epic 7
 
 // Initialize data if localStorage is empty or version changed
 export const initializeData = (): void => {
@@ -23,6 +24,7 @@ export const initializeData = (): void => {
       saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
       saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
       saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+      saveToStorage(STORAGE_KEYS.TASKS, createMockTasks()); // New for Epic 7
       localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
       console.log('Data reseeded to localStorage (version', CURRENT_DATA_VERSION, ')');
     } else {
@@ -36,6 +38,7 @@ export const initializeData = (): void => {
       saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
       saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
       saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+      saveToStorage(STORAGE_KEYS.TASKS, createMockTasks()); // New for Epic 7
     }
   }
 };
@@ -46,6 +49,7 @@ export const reseedData = (): void => {
   saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
   saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
   saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+  saveToStorage(STORAGE_KEYS.TASKS, createMockTasks()); // New for Epic 7
   localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
   console.log('Data manually reseeded');
 };
@@ -232,5 +236,105 @@ export const userOperations = {
   getById: (id: string): User | undefined => {
     const users = loadFromStorage<User>(STORAGE_KEYS.USERS);
     return users.find(user => user.id === id);
+  }
+};
+
+// Task CRUD operations - New for Epic 7
+export const taskOperations = {
+  getAll: (): Task[] => loadFromStorage<Task>(STORAGE_KEYS.TASKS),
+  
+  getById: (id: string): Task | undefined => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    return tasks.find(task => task.id === id);
+  },
+  
+  getByTransitionId: (transitionId: string): Task[] => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    return tasks.filter(task => task.transitionId === transitionId);
+  },
+  
+  getByAssignedUser: (userId: string): Task[] => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    return tasks.filter(task => task.assignedUserId === userId);
+  },
+  
+  getIncompleteByTransitionId: (transitionId: string): Task[] => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    return tasks.filter(task => task.transitionId === transitionId && !task.isCompleted);
+  },
+  
+  create: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    const newTask: Task = {
+      ...task,
+      id: `task-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    tasks.push(newTask);
+    saveToStorage(STORAGE_KEYS.TASKS, tasks);
+    return newTask;
+  },
+  
+  update: (id: string, updates: Partial<Task>): Task | null => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    const index = tasks.findIndex(task => task.id === id);
+    
+    if (index === -1) return null;
+    
+    tasks[index] = {
+      ...tasks[index],
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    saveToStorage(STORAGE_KEYS.TASKS, tasks);
+    return tasks[index];
+  },
+  
+  delete: (id: string): boolean => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    const filteredTasks = tasks.filter(task => task.id !== id);
+    
+    if (filteredTasks.length === tasks.length) return false;
+    
+    saveToStorage(STORAGE_KEYS.TASKS, filteredTasks);
+    return true;
+  },
+  
+  markCompleted: (id: string, completedByUserId: string): Task | null => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    const index = tasks.findIndex(task => task.id === id);
+    
+    if (index === -1) return null;
+    
+    tasks[index] = {
+      ...tasks[index],
+      isCompleted: true,
+      completedAt: new Date(),
+      completedBy: completedByUserId,
+      updatedAt: new Date()
+    };
+    
+    saveToStorage(STORAGE_KEYS.TASKS, tasks);
+    return tasks[index];
+  },
+  
+  markIncomplete: (id: string): Task | null => {
+    const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
+    const index = tasks.findIndex(task => task.id === id);
+    
+    if (index === -1) return null;
+    
+    tasks[index] = {
+      ...tasks[index],
+      isCompleted: false,
+      completedAt: undefined,
+      completedBy: undefined,
+      updatedAt: new Date()
+    };
+    
+    saveToStorage(STORAGE_KEYS.TASKS, tasks);
+    return tasks[index];
   }
 };

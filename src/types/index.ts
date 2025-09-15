@@ -40,15 +40,20 @@ export interface Status {
     conditions: string[]; // future use
   }
   
-  // Task Definition
+  // Task Definition - Updated for Epic 7
   export interface Task {
     id: string;
     name: string;
-    description: string;
-    assignedToRole?: string;
-    assignedToUserId?: string;
+    description: string; // This will serve as the "goal" field
+    assignedUserId: string; // Required - specific user assignment
     deadline?: Date;
     isRequired: boolean;
+    isCompleted: boolean; // New field
+    completedAt?: Date; // New field
+    completedBy?: string; // New field - user ID who marked it done
+    transitionId: string; // New field - which transition this task belongs to
+    createdAt: Date; // New field
+    updatedAt: Date; // New field
   }
   
   // Project Entity

@@ -1,4 +1,4 @@
-import type { Status, Workflow, Project, User, Transition } from '../types';
+import type { Status, Workflow, Project, User, Transition, Task } from '../types';
 
 // Generate unique IDs
 // const generateId = (): string => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -86,46 +86,112 @@ export const createMockStatuses = (): Status[] => [
   }
 ];
 
-// Mock Transitions
+// Mock Tasks - New for Epic 7
+export const createMockTasks = (): Task[] => [
+  {
+    id: 'task-1',
+    name: 'Site Survey',
+    description: 'Complete detailed site survey and measurements',
+    assignedUserId: 'user-3', // Mike Technician
+    deadline: new Date('2024-02-15'),
+    isRequired: true,
+    isCompleted: false,
+    transitionId: 'trans-1', // Planning -> Design Review
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-15')
+  },
+  {
+    id: 'task-2',
+    name: 'Technical Drawing Review',
+    description: 'Review and approve technical drawings and specifications',
+    assignedUserId: 'user-4', // Emily Designer
+    deadline: new Date('2024-02-20'),
+    isRequired: true,
+    isCompleted: false,
+    transitionId: 'trans-2', // Design Review -> Customer Approval
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-15')
+  },
+  {
+    id: 'task-3',
+    name: 'Permit Documentation',
+    description: 'Prepare and submit all required permit documentation',
+    assignedUserId: 'user-2', // Sarah Manager
+    deadline: new Date('2024-02-25'),
+    isRequired: true,
+    isCompleted: true,
+    completedAt: new Date('2024-01-20'),
+    completedBy: 'user-2',
+    transitionId: 'trans-2', // Design Review -> Customer Approval
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-20')
+  },
+  {
+    id: 'task-4',
+    name: 'Equipment Procurement',
+    description: 'Order and verify delivery of all installation equipment',
+    assignedUserId: 'user-3', // Mike Technician
+    deadline: new Date('2024-03-01'),
+    isRequired: true,
+    isCompleted: false,
+    transitionId: 'trans-3', // Customer Approval -> Installation Ready
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-15')
+  },
+  {
+    id: 'task-5',
+    name: 'Final Quality Check',
+    description: 'Perform comprehensive quality inspection and testing',
+    assignedUserId: 'user-5', // Oliver Analyst
+    deadline: new Date('2024-03-10'),
+    isRequired: true,
+    isCompleted: false,
+    transitionId: 'trans-4', // Installation Ready -> Completed
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-15')
+  }
+];
+
+// Mock Transitions - Updated to include tasks
 export const createMockTransitions = (): Transition[] => [
   {
     id: 'trans-1',
-    fromStatusId: 'status-1',
-    toStatusId: 'status-2',
+    fromStatusId: 'status-1', // Planning
+    toStatusId: 'status-2', // Design Review
     requiresApproval: false,
     approverRoles: [],
     approverUserIds: [],
-    tasks: [],
+    tasks: [], // Task will be linked via transitionId
     conditions: []
   },
   {
     id: 'trans-2',
-    fromStatusId: 'status-2',
-    toStatusId: 'status-3',
+    fromStatusId: 'status-2', // Design Review
+    toStatusId: 'status-3', // Customer Approval
     requiresApproval: true,
     approverRoles: ['admin'],
     approverUserIds: [],
-    tasks: [],
+    tasks: [], // Tasks will be linked via transitionId
     conditions: []
   },
   {
     id: 'trans-3',
-    fromStatusId: 'status-3',
-    toStatusId: 'status-4',
+    fromStatusId: 'status-3', // Customer Approval
+    toStatusId: 'status-4', // Installation Ready
     requiresApproval: false,
     approverRoles: [],
     approverUserIds: [],
-    tasks: [],
+    tasks: [], // Tasks will be linked via transitionId
     conditions: []
   },
   {
     id: 'trans-4',
-    fromStatusId: 'status-4',
-    toStatusId: 'status-5',
-    requiresApproval: false,
-    approverRoles: [],
-    approverUserIds: [],
-    tasks: [],
+    fromStatusId: 'status-4', // Installation Ready
+    toStatusId: 'status-5', // Completed
+    requiresApproval: true,
+    approverRoles: ['admin'],
+    approverUserIds: ['user-1'], // John Admin
+    tasks: [], // Tasks will be linked via transitionId
     conditions: []
   }
 ];
@@ -134,14 +200,62 @@ export const createMockTransitions = (): Transition[] => [
 export const createMockWorkflows = (): Workflow[] => [
   {
     id: 'workflow-1',
-    name: 'Standard PV Project Workflow',
-    description: 'Default workflow for photovoltaic installation projects',
+    name: 'Standard PV Installation',
+    description: 'Default workflow for photovoltaic system installations',
     entityType: 'project',
     statuses: ['status-1', 'status-2', 'status-3', 'status-4', 'status-5'],
     transitions: createMockTransitions(),
     isDefault: true,
     createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15')
+    updatedAt: new Date('2024-01-15'),
+    layout: {
+      statusPositions: {
+        'status-1': { x: 100, y: 80 },
+        'status-2': { x: 300, y: 80 },
+        'status-3': { x: 500, y: 80 },
+        'status-4': { x: 700, y: 80 },
+        'status-5': { x: 900, y: 80 }
+      }
+    }
+  },
+  {
+    id: 'workflow-2',
+    name: 'Express Installation',
+    description: 'Simplified workflow for small residential installations',
+    entityType: 'project',
+    statuses: ['status-1', 'status-4', 'status-5'],
+    transitions: [
+      {
+        id: 'trans-express-1',
+        fromStatusId: 'status-1',
+        toStatusId: 'status-4',
+        requiresApproval: false,
+        approverRoles: [],
+        approverUserIds: [],
+        tasks: [],
+        conditions: []
+      },
+      {
+        id: 'trans-express-2',
+        fromStatusId: 'status-4',
+        toStatusId: 'status-5',
+        requiresApproval: true,
+        approverRoles: ['admin'],
+        approverUserIds: [],
+        tasks: [],
+        conditions: []
+      }
+    ],
+    isDefault: false,
+    createdAt: new Date('2024-01-20'),
+    updatedAt: new Date('2024-01-20'),
+    layout: {
+      statusPositions: {
+        'status-1': { x: 100, y: 80 },
+        'status-4': { x: 400, y: 80 },
+        'status-5': { x: 700, y: 80 }
+      }
+    }
   }
 ];
 
@@ -149,11 +263,11 @@ export const createMockWorkflows = (): Workflow[] => [
 export const createMockProjects = (): Project[] => [
   {
     id: 'project-1',
-    title: 'Residential Solar - Johnson Family',
-    description: '15kW residential solar installation for Johnson family home',
+    title: 'Residential Solar - Smith House',
+    description: '10kW rooftop solar installation for residential property',
     creator: 'user-2',
-    createdAt: new Date('2024-02-01'),
-    lastEditedAt: new Date('2024-02-05'),
+    createdAt: new Date('2024-01-20'),
+    lastEditedAt: new Date('2024-01-25'),
     currentStatusId: 'status-2',
     workflowId: 'workflow-1',
     statusHistory: [
@@ -161,8 +275,8 @@ export const createMockProjects = (): Project[] => [
         id: 'hist-1',
         toStatusId: 'status-1',
         userId: 'user-2',
-        timestamp: new Date('2024-02-01'),
-        comment: 'Project initiated',
+        timestamp: new Date('2024-01-20'),
+        comment: 'Project created',
         tasksCompleted: []
       },
       {
@@ -170,167 +284,57 @@ export const createMockProjects = (): Project[] => [
         fromStatusId: 'status-1',
         toStatusId: 'status-2',
         userId: 'user-2',
-        timestamp: new Date('2024-02-05'),
-        comment: 'Planning completed, moving to design review',
-        tasksCompleted: []
+        timestamp: new Date('2024-01-25'),
+        comment: 'Planning completed, moved to design review',
+        tasksCompleted: ['task-1'] // Site Survey was completed
       }
     ]
   },
   {
     id: 'project-2',
-    title: 'Commercial Solar - ABC Manufacturing',
-    description: '50kW commercial solar installation for manufacturing facility',
-    creator: 'user-3',
-    createdAt: new Date('2024-01-20'),
-    lastEditedAt: new Date('2024-02-10'),
-    currentStatusId: 'status-4',
+    title: 'Commercial Solar - Office Building',
+    description: '50kW commercial solar installation with battery storage',
+    creator: 'user-1',
+    createdAt: new Date('2024-01-18'),
+    lastEditedAt: new Date('2024-01-18'),
+    currentStatusId: 'status-1',
     workflowId: 'workflow-1',
     statusHistory: [
       {
         id: 'hist-3',
         toStatusId: 'status-1',
-        userId: 'user-3',
-        timestamp: new Date('2024-01-20'),
-        comment: 'Commercial project started',
+        userId: 'user-1',
+        timestamp: new Date('2024-01-18'),
+        comment: 'Project created',
         tasksCompleted: []
       }
     ]
   },
   {
     id: 'project-3',
-    title: 'Community Solar - Green Valley',
-    description: '100kW community solar project for Green Valley neighborhood',
-    creator: 'user-1',
-    createdAt: new Date('2024-01-10'),
-    lastEditedAt: new Date('2024-01-15'),
-    currentStatusId: 'status-1',
-    workflowId: 'workflow-1',
+    title: 'Express Install - Johnson Residence',
+    description: '5kW simple rooftop installation using express workflow',
+    creator: 'user-3',
+    createdAt: new Date('2024-01-22'),
+    lastEditedAt: new Date('2024-01-28'),
+    currentStatusId: 'status-4',
+    workflowId: 'workflow-2',
     statusHistory: [
       {
         id: 'hist-4',
         toStatusId: 'status-1',
-        userId: 'user-1',
-        timestamp: new Date('2024-01-10'),
-        comment: 'Large community project in planning phase',
-        tasksCompleted: []
-      }
-    ]
-  },
-  {
-    id: 'project-4',
-    title: 'Industrial Solar - North Plant',
-    description: '75kW industrial solar installation for North Plant facility',
-    creator: 'user-4',
-    createdAt: new Date('2024-02-12'),
-    lastEditedAt: new Date('2024-02-14'),
-    currentStatusId: 'status-3',
-    workflowId: 'workflow-1',
-    statusHistory: [
-      {
-        id: 'hist-5',
-        toStatusId: 'status-1',
-        userId: 'user-4',
-        timestamp: new Date('2024-02-12'),
-        comment: 'Project created for industrial site',
-        tasksCompleted: []
-      },
-      {
-        id: 'hist-6',
-        fromStatusId: 'status-1',
-        toStatusId: 'status-2',
-        userId: 'user-4',
-        timestamp: new Date('2024-02-13'),
-        comment: 'Planning to design review',
-        tasksCompleted: []
-      },
-      {
-        id: 'hist-7',
-        fromStatusId: 'status-2',
-        toStatusId: 'status-3',
-        userId: 'user-4',
-        timestamp: new Date('2024-02-14'),
-        comment: 'Design approved, awaiting customer approval',
-        tasksCompleted: []
-      }
-    ]
-  },
-  {
-    id: 'project-5',
-    title: 'Retail Chain - City Center',
-    description: '30kW solar installation for retail chain roof',
-    creator: 'user-5',
-    createdAt: new Date('2024-03-01'),
-    lastEditedAt: new Date('2024-03-03'),
-    currentStatusId: 'status-2',
-    workflowId: 'workflow-1',
-    statusHistory: [
-      {
-        id: 'hist-8',
-        toStatusId: 'status-1',
-        userId: 'user-5',
-        timestamp: new Date('2024-03-01'),
-        comment: 'Kickoff meeting completed',
-        tasksCompleted: []
-      },
-      {
-        id: 'hist-9',
-        fromStatusId: 'status-1',
-        toStatusId: 'status-2',
-        userId: 'user-5',
-        timestamp: new Date('2024-03-03'),
-        comment: 'Moving to design review',
-        tasksCompleted: []
-      }
-    ]
-  },
-  {
-    id: 'project-6',
-    title: 'Municipal Building - West Side',
-    description: '40kW installation for municipal building',
-    creator: 'user-2',
-    createdAt: new Date('2024-02-18'),
-    lastEditedAt: new Date('2024-02-20'),
-    currentStatusId: 'status-5',
-    workflowId: 'workflow-1',
-    statusHistory: [
-      {
-        id: 'hist-10',
-        toStatusId: 'status-1',
-        userId: 'user-2',
-        timestamp: new Date('2024-02-18'),
+        userId: 'user-3',
+        timestamp: new Date('2024-01-22'),
         comment: 'Project created',
         tasksCompleted: []
       },
       {
-        id: 'hist-11',
+        id: 'hist-5',
         fromStatusId: 'status-1',
-        toStatusId: 'status-2',
-        userId: 'user-2',
-        timestamp: new Date('2024-02-18'),
-        tasksCompleted: []
-      },
-      {
-        id: 'hist-12',
-        fromStatusId: 'status-2',
-        toStatusId: 'status-3',
-        userId: 'user-2',
-        timestamp: new Date('2024-02-19'),
-        tasksCompleted: []
-      },
-      {
-        id: 'hist-13',
-        fromStatusId: 'status-3',
         toStatusId: 'status-4',
-        userId: 'user-2',
-        timestamp: new Date('2024-02-19'),
-        tasksCompleted: []
-      },
-      {
-        id: 'hist-14',
-        fromStatusId: 'status-4',
-        toStatusId: 'status-5',
-        userId: 'user-2',
-        timestamp: new Date('2024-02-20'),
+        userId: 'user-3',
+        timestamp: new Date('2024-01-28'),
+        comment: 'Express installation ready',
         tasksCompleted: []
       }
     ]

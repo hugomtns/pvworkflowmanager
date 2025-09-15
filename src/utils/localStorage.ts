@@ -5,7 +5,8 @@ const STORAGE_KEYS = {
     WORKFLOWS: 'pvworkflow_workflows',
     PROJECTS: 'pvworkflow_projects',
     USERS: 'pvworkflow_users',
-    TRANSITIONS: 'pvworkflow_transitions'
+    TRANSITIONS: 'pvworkflow_transitions',
+    TASKS: 'pvworkflow_tasks' // New for Epic 7
   } as const;
   
   // Generic save function
