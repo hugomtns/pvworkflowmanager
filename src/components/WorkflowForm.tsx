@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { statusOperations } from '../data/dataAccess';
+import WorkflowCanvas from './WorkflowCanvas';
 import type { Workflow, Status } from '../types';
 
 interface WorkflowFormProps {
@@ -19,6 +20,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [availableStatuses, setAvailableStatuses] = useState<Status[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<Status[]>([]);
 
   const entityTypes = ['project', 'campaign', 'design', 'file'];
 
@@ -30,14 +32,12 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
     );
     setAvailableStatuses(filteredStatuses);
     
-    // Remove any selected statuses that don't match the new entity type
-    setFormData(prev => ({
-      ...prev,
-      statuses: prev.statuses.filter(statusId => 
-        filteredStatuses.some(status => status.id === statusId)
-      )
-    }));
-  }, [formData.entityType]);
+    // Update selected statuses based on current workflow
+    const workflowStatuses = filteredStatuses.filter(status => 
+      formData.statuses.includes(status.id)
+    );
+    setSelectedStatuses(workflowStatuses);
+  }, [formData.entityType, formData.statuses]);
 
   // Validate form data
   const validateForm = (): boolean => {
@@ -55,8 +55,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
       newErrors.description = 'Description must be at least 10 characters';
     }
 
-    if (formData.statuses.length < 2) {
-      newErrors.statuses = 'At least 2 statuses must be selected';
+    if (selectedStatuses.length < 2) {
+      newErrors.statuses = 'At least 2 statuses must be selected for the workflow';
     }
 
     setErrors(newErrors);
@@ -67,11 +67,12 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
     e.preventDefault();
     
     if (validateForm()) {
-      // Create basic transitions (linear flow)
-      const transitions = formData.statuses.slice(0, -1).map((fromStatusId, index) => ({
+      // Create basic transitions (linear flow for now - we'll improve this)
+      const statusIds = selectedStatuses.map(s => s.id);
+      const transitions = statusIds.slice(0, -1).map((fromStatusId, index) => ({
         id: `trans-${Date.now()}-${index}`,
         fromStatusId,
-        toStatusId: formData.statuses[index + 1],
+        toStatusId: statusIds[index + 1],
         requiresApproval: false,
         approverRoles: [],
         approverUserIds: [],
@@ -81,36 +82,19 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
 
       onSave({
         ...formData,
+        statuses: statusIds,
         transitions
       });
     }
   };
 
-  const handleStatusToggle = (statusId: string, checked: boolean) => {
-    if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        statuses: [...prev.statuses, statusId]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        statuses: prev.statuses.filter(id => id !== statusId)
-      }));
-    }
-  };
-
-  const moveStatus = (statusId: string, direction: 'up' | 'down') => {
-    const currentIndex = formData.statuses.indexOf(statusId);
-    if (currentIndex === -1) return;
-
-    const newStatuses = [...formData.statuses];
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-
-    if (newIndex >= 0 && newIndex < newStatuses.length) {
-      [newStatuses[currentIndex], newStatuses[newIndex]] = [newStatuses[newIndex], newStatuses[currentIndex]];
-      setFormData(prev => ({ ...prev, statuses: newStatuses }));
-    }
+  // Handle status selection from canvas
+  const handleStatusSelectionChange = (statuses: Status[]) => {
+    setSelectedStatuses(statuses);
+    setFormData(prev => ({
+      ...prev,
+      statuses: statuses.map(s => s.id)
+    }));
   };
 
   return (
@@ -130,8 +114,9 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
         backgroundColor: 'white',
         borderRadius: '8px',
         padding: '2rem',
-        width: '600px',
-        maxHeight: '80vh',
+        width: '90%',
+        maxWidth: '1000px',
+        maxHeight: '90vh',
         overflow: 'auto'
       }}>
         <h3 style={{ margin: '0 0 1.5rem 0' }}>
@@ -139,33 +124,64 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
         </h3>
 
         <form onSubmit={handleSubmit}>
-          {/* Workflow Name */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem',
-              fontWeight: 'bold'
-            }}>
-              Workflow Name *
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: errors.name ? '1px solid #f44336' : '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '1rem'
-              }}
-              placeholder="e.g., Standard Project Workflow"
-            />
-            {errors.name && (
-              <div style={{ color: '#f44336', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                {errors.name}
-              </div>
-            )}
+          {/* Basic Workflow Info */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            {/* Workflow Name */}
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem',
+                fontWeight: 'bold'
+              }}>
+                Workflow Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: errors.name ? '1px solid #f44336' : '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+                placeholder="e.g., Standard Project Workflow"
+              />
+              {errors.name && (
+                <div style={{ color: '#f44336', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                  {errors.name}
+                </div>
+              )}
+            </div>
+
+            {/* Entity Type */}
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem',
+                fontWeight: 'bold'
+              }}>
+                Entity Type
+              </label>
+              <select
+                value={formData.entityType}
+                onChange={(e) => setFormData(prev => ({ ...prev, entityType: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '1rem'
+                }}
+              >
+                {entityTypes.map(type => (
+                  <option key={type} value={type} style={{ textTransform: 'capitalize' }}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Description */}
@@ -186,7 +202,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
                 border: errors.description ? '1px solid #f44336' : '1px solid #ddd',
                 borderRadius: '4px',
                 fontSize: '1rem',
-                minHeight: '80px',
+                minHeight: '60px',
                 resize: 'vertical'
               }}
               placeholder="Describe the purpose of this workflow..."
@@ -196,34 +212,6 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
                 {errors.description}
               </div>
             )}
-          </div>
-
-          {/* Entity Type */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem',
-              fontWeight: 'bold'
-            }}>
-              Entity Type
-            </label>
-            <select
-              value={formData.entityType}
-              onChange={(e) => setFormData(prev => ({ ...prev, entityType: e.target.value }))}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '1rem'
-              }}
-            >
-              {entityTypes.map(type => (
-                <option key={type} value={type} style={{ textTransform: 'capitalize' }}>
-                  {type}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Default Workflow Toggle */}
@@ -241,163 +229,113 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
               />
               <span style={{ fontWeight: 'bold' }}>Make this the default workflow</span>
             </label>
-            <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
-              New {formData.entityType} entities will automatically use this workflow
-            </div>
           </div>
 
-          {/* Status Selection */}
+          {/* CANVAS SECTION - This replaces the old status selection */}
           <div style={{ marginBottom: '2rem' }}>
             <label style={{ 
               display: 'block', 
               marginBottom: '0.5rem',
               fontWeight: 'bold'
             }}>
-              Workflow Statuses * (Select and arrange in order)
+              Design Your Workflow * (Drag statuses to build your workflow)
             </label>
             
             {availableStatuses.length === 0 ? (
               <div style={{
-                padding: '1rem',
+                padding: '2rem',
                 backgroundColor: '#fff3e0',
                 border: '1px solid #ff9800',
                 borderRadius: '4px',
-                color: '#e65100'
+                color: '#e65100',
+                textAlign: 'center'
               }}>
                 No statuses available for {formData.entityType} entities. 
-                Please create some statuses first.
+                <br />Please create some statuses first.
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '2rem' }}>
-                {/* Available Statuses */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    Available Statuses
+              <div>
+                {/* Status Palette */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    Available Statuses (drag into canvas):
                   </div>
-                  <div style={{
-                    border: '1px solid #ddd',
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '0.5rem', 
+                    flexWrap: 'wrap',
+                    padding: '0.75rem',
+                    backgroundColor: '#f9f9f9',
                     borderRadius: '4px',
-                    padding: '1rem',
-                    minHeight: '200px',
-                    backgroundColor: '#fafafa'
+                    border: '1px solid #ddd'
                   }}>
                     {availableStatuses.map(status => (
-                      <label
+                      <div
                         key={status.id}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
-                          marginBottom: '0.5rem',
-                          cursor: 'pointer',
                           padding: '0.5rem',
+                          backgroundColor: selectedStatuses.some(s => s.id === status.id) ? '#e8f5e8' : 'white',
+                          border: '1px solid #ddd',
                           borderRadius: '4px',
-                          backgroundColor: formData.statuses.includes(status.id) ? '#e8f5e8' : 'white',
-                          border: '1px solid #ddd'
+                          cursor: 'pointer',
+                          fontSize: '0.85rem'
+                        }}
+                        onClick={() => {
+                          if (selectedStatuses.some(s => s.id === status.id)) {
+                            // Remove from selection
+                            const newSelection = selectedStatuses.filter(s => s.id !== status.id);
+                            handleStatusSelectionChange(newSelection);
+                          } else {
+                            // Add to selection
+                            handleStatusSelectionChange([...selectedStatuses, status]);
+                          }
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={formData.statuses.includes(status.id)}
-                          onChange={(e) => handleStatusToggle(status.id, e.target.checked)}
-                        />
                         <div style={{
-                          width: '16px',
-                          height: '16px',
+                          width: '12px',
+                          height: '12px',
                           backgroundColor: status.color,
                           borderRadius: '50%'
                         }} />
-                        <span style={{ fontSize: '0.9rem' }}>{status.name}</span>
-                      </label>
+                        <span>{status.name}</span>
+                        {selectedStatuses.some(s => s.id === status.id) && (
+                          <span style={{ color: '#4caf50' }}>✓</span>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Selected Statuses (Workflow Order) */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    Workflow Order
-                  </div>
-                  <div style={{
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    padding: '1rem',
-                    minHeight: '200px',
-                    backgroundColor: '#f0f8ff'
-                  }}>
-                    {formData.statuses.length === 0 ? (
-                      <div style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '2rem' }}>
-                        Select statuses from the left
-                      </div>
-                    ) : (
-                      formData.statuses.map((statusId, index) => {
-                        const status = availableStatuses.find(s => s.id === statusId);
-                        if (!status) return null;
-
-                        return (
-                          <div
-                            key={statusId}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              marginBottom: '0.5rem',
-                              padding: '0.5rem',
-                              backgroundColor: 'white',
-                              border: '1px solid #ddd',
-                              borderRadius: '4px'
-                            }}
-                          >
-                            <span style={{ fontSize: '0.8rem', color: '#666', minWidth: '20px' }}>
-                              {index + 1}.
-                            </span>
-                            <div style={{
-                              width: '16px',
-                              height: '16px',
-                              backgroundColor: status.color,
-                              borderRadius: '50%'
-                            }} />
-                            <span style={{ fontSize: '0.9rem', flex: 1 }}>{status.name}</span>
-                            <div style={{ display: 'flex', gap: '0.25rem' }}>
-                              <button
-                                type="button"
-                                onClick={() => moveStatus(statusId, 'up')}
-                                disabled={index === 0}
-                                style={{
-                                  padding: '0.25rem',
-                                  border: 'none',
-                                  backgroundColor: index === 0 ? '#f5f5f5' : '#2196f3',
-                                  color: index === 0 ? '#999' : 'white',
-                                  borderRadius: '3px',
-                                  cursor: index === 0 ? 'not-allowed' : 'pointer',
-                                  fontSize: '0.7rem'
-                                }}
-                              >
-                                ↑
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => moveStatus(statusId, 'down')}
-                                disabled={index === formData.statuses.length - 1}
-                                style={{
-                                  padding: '0.25rem',
-                                  border: 'none',
-                                  backgroundColor: index === formData.statuses.length - 1 ? '#f5f5f5' : '#2196f3',
-                                  color: index === formData.statuses.length - 1 ? '#999' : 'white',
-                                  borderRadius: '3px',
-                                  cursor: index === formData.statuses.length - 1 ? 'not-allowed' : 'pointer',
-                                  fontSize: '0.7rem'
-                                }}
-                              >
-                                ↓
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                {/* Workflow Canvas */}
+                <div style={{
+                  border: '2px solid #ddd',
+                  borderRadius: '8px',
+                  backgroundColor: 'white'
+                }}>
+                  <WorkflowCanvas 
+                    statuses={selectedStatuses}
+                    width={900}
+                    height={400}
+                    onStatusMove={(statusId, x, y) => {
+                      console.log(`Status ${statusId} moved to (${x}, ${y})`);
+                      // TODO: Save positions for workflow layout
+                    }}
+                  />
                 </div>
+                
+                {selectedStatuses.length > 0 && (
+                  <div style={{ 
+                    marginTop: '0.5rem', 
+                    fontSize: '0.8rem', 
+                    color: '#666' 
+                  }}>
+                    Selected: {selectedStatuses.length} status{selectedStatuses.length !== 1 ? 'es' : ''} 
+                    ({selectedStatuses.map(s => s.name).join(', ')})
+                  </div>
+                )}
               </div>
             )}
             
