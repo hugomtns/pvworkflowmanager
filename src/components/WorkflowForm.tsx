@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Select from 'react-select';
 import { statusOperations, projectOperations } from '../data/dataAccess';
 import WorkflowCanvas from './WorkflowCanvas';
 import type { Workflow, Status, Project } from '../types';
@@ -72,9 +73,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
     }
 
     // load projects for possible per-project assignment
-    const projects = projectOperations.getAll();
-    const filteredProjects = projects.filter(p => true); // all projects - could filter by entity type if needed
-    setAvailableProjects(filteredProjects);
+  const projects = projectOperations.getAll();
+  setAvailableProjects(projects);
 
     // if editing an existing workflow, preselect projects that currently use it
     if (workflow) {
@@ -295,35 +295,43 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
             </label>
           </div>
 
-          {/* Apply To: Entity or Specific Projects */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Apply Workflow To</div>
-            <label style={{ display: 'block', marginBottom: '0.25rem' }}>
-              <input type="radio" name="applyTo" value="entity" checked={applyTo === 'entity'} onChange={() => setApplyTo('entity')} />
-              <span style={{ marginLeft: '0.5rem' }}>All {formData.entityType} entities</span>
-            </label>
-            <label style={{ display: 'block' }}>
-              <input type="radio" name="applyTo" value="specific" checked={applyTo === 'specific'} onChange={() => setApplyTo('specific')} />
-              <span style={{ marginLeft: '0.5rem' }}>Specific {formData.entityType} items</span>
-            </label>
+          {/* Apply To: Entity or Specific Projects - left-aligned radios, right-aligned dropdown multi-select */}
+          <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Apply Workflow To</div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>
+                <input type="radio" name="applyTo" value="entity" checked={applyTo === 'entity'} onChange={() => setApplyTo('entity')} />
+                <span style={{ marginLeft: '0.5rem' }}>All {formData.entityType} entities</span>
+              </label>
+              <label style={{ display: 'block' }}>
+                <input type="radio" name="applyTo" value="specific" checked={applyTo === 'specific'} onChange={() => setApplyTo('specific')} />
+                <span style={{ marginLeft: '0.5rem' }}>Specific {formData.entityType} items</span>
+              </label>
+            </div>
 
-            {applyTo === 'specific' && (
-              <div style={{ marginTop: '0.75rem', border: '1px solid #eee', padding: '0.5rem', borderRadius: '6px', maxHeight: '140px', overflow: 'auto' }}>
-                {availableProjects.filter(p => p).map(p => (
-                  <label key={p.id} style={{ display: 'block', marginBottom: '0.25rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedProjectIds.includes(p.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedProjectIds(prev => [...prev, p.id]);
-                        else setSelectedProjectIds(prev => prev.filter(id => id !== p.id));
-                      }}
-                    />
-                    <span style={{ marginLeft: '0.5rem' }}>{p.title}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+            <div style={{ width: '420px', textAlign: 'right' }}>
+              {/* Dropdown multiselect */}
+              {applyTo === 'specific' && (
+                <div style={{ display: 'inline-block', textAlign: 'left' }}>
+                  <Select
+                    isMulti
+                    options={availableProjects.map(p => ({ value: p.id, label: p.title }))}
+                    value={availableProjects.filter(p => selectedProjectIds.includes(p.id)).map(p => ({ value: p.id, label: p.title }))}
+                    onChange={(selectedOptions) => {
+                      setSelectedProjectIds(selectedOptions.map(o => o.value));
+                    }}
+                    closeMenuOnSelect={false}
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        minWidth: '260px',
+                        backgroundColor: 'white',
+                      }),
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* CANVAS SECTION - This replaces the old status selection */}
