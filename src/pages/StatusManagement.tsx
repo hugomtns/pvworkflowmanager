@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { statusOperations } from '../data/dataAccess';
+import { statusOperations, projectOperations } from '../data/dataAccess';
 import type { Status } from '../types';
 import StatusForm from '../components/StatusForm';
 
@@ -25,6 +25,12 @@ const StatusManagement: React.FC = () => {
     return date.toLocaleDateString();
   };
 
+  // Get project count for a status
+  const getProjectCount = (statusId: string): number => {
+    const projects = projectOperations.getAll();
+    return projects.filter(project => project.currentStatusId === statusId).length;
+  };
+
   // Handlers for Create/Edit/Delete and Form actions
   const handleCreateClick = (): void => {
     setEditingStatus(undefined);
@@ -37,7 +43,20 @@ const StatusManagement: React.FC = () => {
   };
 
   const handleDeleteClick = (id: string): void => {
-    // Simple confirmation; can be replaced by a nicer modal later
+    // Check if status is in use by any projects
+    const projects = projectOperations.getAll();
+    const projectsUsingStatus = projects.filter(project => 
+      project.currentStatusId === id ||
+      project.statusHistory.some(entry => 
+        entry.toStatusId === id || entry.fromStatusId === id
+      )
+    );
+
+    if (projectsUsingStatus.length > 0) {
+      alert(`Cannot delete this status. It is currently used by ${projectsUsingStatus.length} project(s): ${projectsUsingStatus.map(p => p.title).join(', ')}`);
+      return;
+    }
+
     const confirmed = window.confirm('Delete this status? This action cannot be undone.');
     if (!confirmed) return;
 
@@ -130,7 +149,7 @@ const StatusManagement: React.FC = () => {
           {/* Table Header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '40px 1fr 120px 1fr 150px 120px 100px',
+            gridTemplateColumns: '40px 1fr 120px 1fr 150px 120px 80px 100px',
             backgroundColor: '#f5f5f5',
             padding: '1rem',
             fontWeight: 'bold',
@@ -142,6 +161,7 @@ const StatusManagement: React.FC = () => {
             <div>Description</div>
             <div>Created</div>
             <div>Updated</div>
+            <div>Projects</div>
             <div>Actions</div>
           </div>
 
@@ -151,7 +171,7 @@ const StatusManagement: React.FC = () => {
               key={status.id}
               style={{
                 display: 'grid',
-                gridTemplateColumns: '40px 1fr 120px 1fr 150px 120px 100px',
+                gridTemplateColumns: '40px 1fr 120px 1fr 150px 120px 80px 100px',
                 padding: '1rem',
                 borderBottom: index < filteredStatuses.length - 1 ? '1px solid #eee' : 'none',
                 backgroundColor: index % 2 === 0 ? 'white' : '#fafafa'
@@ -220,6 +240,23 @@ const StatusManagement: React.FC = () => {
                 {formatDate(status.updatedAt)}
               </div>
 
+              {/* Project Count */}
+              <div style={{
+                fontSize: '0.8rem',
+                color: '#666',
+                textAlign: 'center'
+              }}>
+                <span style={{
+                  backgroundColor: getProjectCount(status.id) > 0 ? '#e8f5e8' : '#f5f5f5',
+                  color: getProjectCount(status.id) > 0 ? '#2e7d32' : '#666',
+                  padding: '0.2rem 0.5rem',
+                  borderRadius: '4px',
+                  fontWeight: 'bold'
+                }}>
+                  {getProjectCount(status.id)}
+                </span>
+              </div>
+
               {/* Actions */}
               <div style={{
                 display: 'flex',
@@ -268,11 +305,34 @@ const StatusManagement: React.FC = () => {
         border: '1px solid #4caf50'
       }}>
         <h4 style={{ margin: '0 0 0.5rem 0', color: '#2e7d32' }}>
-          Status Usage Information
+          Status Usage Summary
         </h4>
-        <p style={{ margin: 0, fontSize: '0.9rem', color: '#388e3c' }}>
-          Coming up: Show which workflows use each status and how many projects are currently in each status.
-        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          {statuses.map(status => {
+            const projectCount = getProjectCount(status.id);
+            return (
+              <div key={status.id} style={{
+                backgroundColor: 'white',
+                padding: '0.75rem',
+                borderRadius: '4px',
+                border: '1px solid #ddd'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    backgroundColor: status.color,
+                    borderRadius: '50%'
+                  }} />
+                  <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{status.name}</span>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {projectCount} project{projectCount !== 1 ? 's' : ''}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Status Form Modal */}

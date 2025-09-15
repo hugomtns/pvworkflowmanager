@@ -25,10 +25,14 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
 
     if (!formData.name.trim()) {
       newErrors.name = 'Status name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Status name must be at least 2 characters';
     }
 
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters';
     }
 
     if (formData.entityTypes.length === 0) {
