@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { projectOperations, statusOperations, userOperations, workflowOperations } from '../data/dataAccess';
-import type { Project, Status, User, Workflow } from '../types';
+import { projectOperations, statusOperations, userOperations } from '../data/dataAccess';
+import type { Project, Status, User } from '../types';
 import StatusChangeModal from '../components/StatusChangeModal';
 import StatusHistory from '../components/StatusHistory';
 import { AppContext } from '../context/AppContext';
+
 
 const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -12,38 +13,28 @@ const ProjectList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusModalProject, setStatusModalProject] = useState<Project | undefined>(undefined);
   const [historyProject, setHistoryProject] = useState<Project | undefined>(undefined);
-  const { currentUser } = useContext(AppContext);
+  const { currentUser, tasks, updateTask, isAdmin, workflows } = useContext(AppContext);
 
   // Load data when component mounts
+
   useEffect(() => {
     setProjects(projectOperations.getAll());
     setStatuses(statusOperations.getAll());
     setUsers(userOperations.getAll());
   }, []);
 
-  const getWorkflowForProject = (project: Project): Workflow | undefined => {
-    return workflowOperations.getById(project.workflowId);
-  };
-
-  // Helper function to get status by ID
-  const getStatusById = (statusId: string): Status | undefined => {
-    return statuses.find(status => status.id === statusId);
-  };
-
-  // Helper function to get user by ID
-  const getUserById = (userId: string): User | undefined => {
-    return users.find(user => user.id === userId);
-  };
-
-  // Filter projects based on search term
+  // Helper functions
+  const getWorkflowForProject = (project: Project) => workflows.find((wf: any) => wf.id === project.workflowId);
+  const getStatusById = (statusId: string) => statuses.find(status => status.id === statusId);
+  const getUserById = (userId: string) => users.find(user => user.id === userId);
   const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Format date for display
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString();
+  const formatDate = (date: Date | string | undefined): string => {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString();
   };
 
   return (
@@ -66,7 +57,6 @@ const ProjectList: React.FC = () => {
           Create New Project
         </button>
       </div>
-      
       {/* Search Bar */}
       <div style={{ marginBottom: '1.5rem' }}>
         <input
@@ -83,7 +73,6 @@ const ProjectList: React.FC = () => {
           }}
         />
       </div>
-
       {/* Project Cards */}
       {filteredProjects.length === 0 ? (
         <div style={{
@@ -103,7 +92,16 @@ const ProjectList: React.FC = () => {
           {filteredProjects.map(project => {
             const status = getStatusById(project.currentStatusId);
             const creator = getUserById(project.creator);
-            
+            const workflow = workflows.find((wf: any) => wf.id === project.workflowId);
+            // Find transitions from current status
+            const possibleTransitions = workflow ? workflow.transitions.filter((tr: any) => tr.fromStatusId === project.currentStatusId) : [];
+            // Tasks for current status transitions (pending)
+            const pendingTasks = tasks.filter((task: any) =>
+              possibleTransitions.some((tr: any) => tr.id === task.transitionId) &&
+              !task.isCompleted &&
+              (task.assignedUserId === currentUser.id || isAdmin)
+            );
+
             return (
               <div
                 key={project.id}
@@ -131,7 +129,6 @@ const ProjectList: React.FC = () => {
                 }}>
                   {project.title}
                 </h3>
-                
                 {/* Project Description */}
                 <p style={{ 
                   margin: '0 0 1rem 0',
@@ -141,7 +138,6 @@ const ProjectList: React.FC = () => {
                 }}>
                   {project.description}
                 </p>
-                
                 {/* Status Badge */}
                 <div style={{
                   display: 'inline-block',
@@ -155,7 +151,43 @@ const ProjectList: React.FC = () => {
                 }}>
                   {status?.name || 'Unknown Status'}
                 </div>
-                
+
+                {/* Pending Tasks Section */}
+                {pendingTasks.length > 0 && (
+                  <div style={{ margin: '1.2rem 0 0.5rem 0', background: '#f5fafd', borderRadius: 6, padding: '1rem', border: '1px solid #e3f2fd' }}>
+                    <div style={{ fontWeight: 600, color: '#1976d2', marginBottom: 8 }}>Pending Tasks for Next Transitions</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', background: 'none' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left', padding: '0.5rem' }}>Task</th>
+                          <th style={{ textAlign: 'left', padding: '0.5rem' }}>Goal</th>
+                          <th style={{ textAlign: 'left', padding: '0.5rem' }}>Deadline</th>
+                          <th style={{ textAlign: 'center', padding: '0.5rem' }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingTasks.map((task: any) => (
+                          <tr key={task.id} style={{ borderBottom: '1px solid #e3e3e3' }}>
+                            <td style={{ padding: '0.5rem' }}>{task.name}</td>
+                            <td style={{ padding: '0.5rem' }}>{task.description}</td>
+                            <td style={{ padding: '0.5rem' }}>{task.deadline ? (task.deadline instanceof Date ? task.deadline.toLocaleDateString() : new Date(task.deadline).toLocaleDateString()) : '-'}</td>
+                            <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                              <button
+                                onClick={() => updateTask({ ...task, isCompleted: true, completedAt: new Date(), completedBy: currentUser.id })}
+                                style={{ background: '#388e3c', color: '#fff', border: 'none', borderRadius: 4, padding: '0.35rem 1.1rem', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 1px 4px #388e3c22', transition: 'background 0.15s' }}
+                                onMouseOver={e => (e.currentTarget.style.background = '#256029')}
+                                onMouseOut={e => (e.currentTarget.style.background = '#388e3c')}
+                              >
+                                Mark as Done
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
                 {/* Project Metadata */}
                 <div style={{ 
                   fontSize: '0.8rem',
@@ -175,29 +207,13 @@ const ProjectList: React.FC = () => {
                   <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
                     <button
                       onClick={() => setStatusModalProject(project)}
-                      style={{
-                        backgroundColor: '#6a1b9a',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.4rem 0.6rem',
-                        borderRadius: '4px',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer'
-                      }}
+                      style={{ backgroundColor: '#6a1b9a', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
                     >
                       Change Status
                     </button>
                     <button
                       onClick={() => setHistoryProject(project)}
-                      style={{
-                        backgroundColor: '#2196f3',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.4rem 0.6rem',
-                        borderRadius: '4px',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer'
-                      }}
+                      style={{ backgroundColor: '#2196f3', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
                     >
                       View History
                     </button>
@@ -208,7 +224,6 @@ const ProjectList: React.FC = () => {
           })}
         </div>
       )}
-
       {statusModalProject && (
         <StatusChangeModal
           project={statusModalProject}
@@ -245,7 +260,6 @@ const ProjectList: React.FC = () => {
           }}
         />
       )}
-
       {historyProject && (
         <StatusHistory
           project={historyProject}

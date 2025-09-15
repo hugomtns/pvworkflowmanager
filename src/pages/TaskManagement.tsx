@@ -1,6 +1,7 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import TaskForm from '../components/TaskForm';
+import { createPortal } from 'react-dom';
 import type { Task } from '../types';
 
 const TaskManagement: React.FC = () => {
@@ -16,6 +17,26 @@ const TaskManagement: React.FC = () => {
       return completionMatch && searchMatch;
     });
   }, [tasks, filters]);
+
+  useEffect(() => {
+    console.log('TaskManagement: showForm=', showForm, 'selectedTask=', selectedTask);
+    if (showForm) {
+      setTimeout(() => {
+        const found = document.body.querySelector('.modal');
+        console.log('DOM check: modal element in body?', !!found, found);
+      }, 50);
+    }
+  }, [showForm, selectedTask]);
+
+  // synchronous render-time check (will run during render)
+  if (showForm) {
+    try {
+      const foundNow = document.body.querySelector('.modal');
+      console.log('Render-time check: modal in body?', !!foundNow, foundNow);
+    } catch (err) {
+      console.log('Render-time check error', err);
+    }
+  }
 
   if (!isAdmin) return <div>Access denied.</div>;
 
@@ -40,7 +61,7 @@ const TaskManagement: React.FC = () => {
           style={{ padding: '0.5rem', borderRadius: 4, border: '1px solid #bbb', flex: 1, minWidth: 200 }}
         />
         <button
-          onClick={() => { setSelectedTask(null); setShowForm(true); }}
+          onClick={() => { console.log('New Task clicked'); setSelectedTask(null); setShowForm(true); console.log('showForm -> true'); }}
           style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '0.5rem 1.2rem', fontWeight: 600, cursor: 'pointer', fontSize: '1rem', boxShadow: '0 1px 4px #1976d220' }}
         >
           New Task
@@ -76,7 +97,7 @@ const TaskManagement: React.FC = () => {
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                       <button
-                        onClick={() => { setSelectedTask(task); setShowForm(true); }}
+                        onClick={() => { console.log('Edit clicked', task.id); setSelectedTask(task); setShowForm(true); console.log('showForm -> true for', task.id); }}
                         style={{
                           background: '#1976d2',
                           color: '#fff',
@@ -89,13 +110,11 @@ const TaskManagement: React.FC = () => {
                           boxShadow: '0 1px 4px #1976d220',
                           transition: 'background 0.15s',
                         }}
-                        onMouseOver={e => (e.currentTarget.style.background = '#1565c0')}
-                        onMouseOut={e => (e.currentTarget.style.background = '#1976d2')}
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => deleteTask(task.id)}
+                        onClick={() => { console.log('Delete clicked', task.id); deleteTask(task.id); }}
                         style={{
                           background: '#fff',
                           color: '#d32f2f',
@@ -127,17 +146,23 @@ const TaskManagement: React.FC = () => {
           </tbody>
         </table>
       </div>
-      {showForm && (
-        <TaskForm
-          task={selectedTask}
-          users={users}
-          transitions={transitions}
-          onSave={(task: Task) => {
-            selectedTask ? updateTask(task) : addTask(task);
-            setShowForm(false);
-          }}
-          onCancel={() => setShowForm(false)}
-        />
+      {/* Modal rendered using React Portal for true overlay */}
+    {showForm && createPortal(
+        <div className="modal" data-portal="task-form" onClick={e => {
+          if (e.target === e.currentTarget) setShowForm(false);
+        }}>
+          <TaskForm
+            task={selectedTask}
+            users={users}
+            transitions={transitions}
+            onSave={(task: Task) => {
+              selectedTask ? updateTask(task) : addTask(task);
+              setShowForm(false);
+            }}
+            onCancel={() => setShowForm(false)}
+          />
+        </div>,
+        document.body
       )}
     </div>
   );
