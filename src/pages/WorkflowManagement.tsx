@@ -72,7 +72,8 @@ const WorkflowManagement: React.FC = () => {
     }
   };
 
-  const handleSaveWorkflow = (workflowData: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveWorkflow = (workflowData: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>, assignedProjectIds?: string[]) => {
+    let savedWorkflow: Workflow | null = null;
     if (editingWorkflow) {
       // Update existing workflow
       const updated = workflowOperations.update(editingWorkflow.id, workflowData);
@@ -80,9 +81,21 @@ const WorkflowManagement: React.FC = () => {
         alert('Failed to update workflow.');
         return;
       }
+      savedWorkflow = updated;
     } else {
       // Create new workflow
-      workflowOperations.create(workflowData);
+      savedWorkflow = workflowOperations.create(workflowData);
+    }
+
+    // If caller supplied specific projects to assign this workflow to, update those projects
+    if (assignedProjectIds && savedWorkflow) {
+      const projects = projectOperations.getAll();
+      assignedProjectIds.forEach(pid => {
+        const proj = projects.find(p => p.id === pid);
+        if (proj) {
+          projectOperations.update(pid, { workflowId: savedWorkflow!.id });
+        }
+      });
     }
 
     loadWorkflows();

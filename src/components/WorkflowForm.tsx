@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { statusOperations } from '../data/dataAccess';
+import { statusOperations, projectOperations } from '../data/dataAccess';
 import WorkflowCanvas from './WorkflowCanvas';
-import type { Workflow, Status } from '../types';
+import type { Workflow, Status, Project } from '../types';
 
 interface WorkflowLayoutData {
   statusPositions: { [statusId: string]: { x: number; y: number } };
@@ -10,7 +10,8 @@ interface WorkflowLayoutData {
 
 interface WorkflowFormProps {
   workflow?: Workflow; // undefined for create, Workflow object for edit
-  onSave: (workflowData: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  // second parameter is an optional list of project ids to assign this workflow to
+  onSave: (workflowData: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>, assignedProjectIds?: string[]) => void;
   onCancel: () => void;
 }
 
@@ -38,6 +39,10 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
 
   const entityTypes = ['project', 'campaign', 'design', 'file'];
 
+  const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+  const [applyTo, setApplyTo] = useState<'entity' | 'specific'>(workflow ? 'entity' : 'entity');
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+
   // Load available statuses and initialize layout when component mounts or entity type changes
   useEffect(() => {
     const allStatuses = statusOperations.getAll();
@@ -64,6 +69,17 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
         ...prev,
         connections
       }));
+    }
+
+    // load projects for possible per-project assignment
+    const projects = projectOperations.getAll();
+    const filteredProjects = projects.filter(p => true); // all projects - could filter by entity type if needed
+    setAvailableProjects(filteredProjects);
+
+    // if editing an existing workflow, preselect projects that currently use it
+    if (workflow) {
+      const assigned = projects.filter(p => p.workflowId === workflow.id).map(p => p.id);
+      setSelectedProjectIds(assigned);
     }
   }, [formData.entityType, formData.statuses, workflow]);
 
@@ -114,7 +130,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
         layout: {
           statusPositions: workflowLayout.statusPositions
         }
-      });
+      }, applyTo === 'specific' ? selectedProjectIds : undefined);
     }
   };
 
@@ -277,6 +293,37 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
               />
               <span style={{ fontWeight: 'bold' }}>Make this the default workflow</span>
             </label>
+          </div>
+
+          {/* Apply To: Entity or Specific Projects */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>Apply Workflow To</div>
+            <label style={{ display: 'block', marginBottom: '0.25rem' }}>
+              <input type="radio" name="applyTo" value="entity" checked={applyTo === 'entity'} onChange={() => setApplyTo('entity')} />
+              <span style={{ marginLeft: '0.5rem' }}>All {formData.entityType} entities</span>
+            </label>
+            <label style={{ display: 'block' }}>
+              <input type="radio" name="applyTo" value="specific" checked={applyTo === 'specific'} onChange={() => setApplyTo('specific')} />
+              <span style={{ marginLeft: '0.5rem' }}>Specific {formData.entityType} items</span>
+            </label>
+
+            {applyTo === 'specific' && (
+              <div style={{ marginTop: '0.75rem', border: '1px solid #eee', padding: '0.5rem', borderRadius: '6px', maxHeight: '140px', overflow: 'auto' }}>
+                {availableProjects.filter(p => p).map(p => (
+                  <label key={p.id} style={{ display: 'block', marginBottom: '0.25rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedProjectIds.includes(p.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedProjectIds(prev => [...prev, p.id]);
+                        else setSelectedProjectIds(prev => prev.filter(id => id !== p.id));
+                      }}
+                    />
+                    <span style={{ marginLeft: '0.5rem' }}>{p.title}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* CANVAS SECTION - This replaces the old status selection */}

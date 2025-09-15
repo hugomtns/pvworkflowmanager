@@ -59,6 +59,8 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   const stageRef = useRef<any>(null);
   const nodeWidth = 120;
   const nodeHeight = 50;
+  const [scale, setScale] = useState(1);
+  const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
 
   // Update status nodes when statuses prop changes
   React.useEffect(() => {
@@ -140,7 +142,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
     setTempConnection(null);
   };
 
-  // Handle mouse move for temporary connection line
+  // Handle mouse move for temporary connection line (account for stage transform)
   const handleMouseMove = () => {
     if (isConnecting && connectionStart) {
       const stage = stageRef.current;
@@ -203,6 +205,36 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         ref={stageRef}
         onMouseMove={handleMouseMove}
         onClick={handleBackgroundClick}
+        draggable // enable panning by dragging the stage
+        scaleX={scale}
+        scaleY={scale}
+        x={stagePosition.x}
+        y={stagePosition.y}
+        onDragEnd={(e) => {
+          setStagePosition({ x: e.target.x(), y: e.target.y() });
+        }}
+        onWheel={(e: any) => {
+          e.evt.preventDefault();
+          const stage = stageRef.current;
+          const oldScale = scale;
+          const pointer = stage.getPointerPosition();
+          const mousePointTo = {
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale,
+          };
+
+          // zoom factor
+          const scaleBy = 1.05;
+          const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+          setScale(newScale);
+
+          // adjust position so zoom is centered on pointer
+          const newPos = {
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale,
+          };
+          setStagePosition(newPos);
+        }}
       >
         <Layer>
           {/* Render connections */}
