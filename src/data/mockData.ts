@@ -338,5 +338,119 @@ export const createMockProjects = (): Project[] => [
         tasksCompleted: []
       }
     ]
+  },
+  {
+    id: 'project-4',
+    title: 'Industrial Solar - Manufacturing Plant',
+    description: '200kW industrial solar array with grid-tie system',
+    creator: 'user-1',
+    createdAt: new Date('2024-01-12'),
+    lastEditedAt: new Date('2024-02-01'),
+    currentStatusId: 'status-5',
+    workflowId: 'workflow-1',
+    statusHistory: [
+      {
+        id: 'hist-6',
+        toStatusId: 'status-1',
+        userId: 'user-1',
+        timestamp: new Date('2024-01-12'),
+        comment: 'Project created',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-7',
+        fromStatusId: 'status-1',
+        toStatusId: 'status-2',
+        userId: 'user-1',
+        timestamp: new Date('2024-01-15'),
+        comment: 'Planning phase completed',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-8',
+        fromStatusId: 'status-2',
+        toStatusId: 'status-3',
+        userId: 'user-4',
+        timestamp: new Date('2024-01-20'),
+        comment: 'Design approved, awaiting customer sign-off',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-9',
+        fromStatusId: 'status-3',
+        toStatusId: 'status-4',
+        userId: 'user-2',
+        timestamp: new Date('2024-01-25'),
+        comment: 'Customer approval received',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-10',
+        fromStatusId: 'status-4',
+        toStatusId: 'status-5',
+        userId: 'user-3',
+        timestamp: new Date('2024-02-01'),
+        comment: 'Installation completed successfully',
+        tasksCompleted: []
+      }
+    ]
+  },
+  {
+    id: 'project-5',
+    title: 'Residential Solar - Davis Family',
+    description: '8kW residential installation with battery backup',
+    creator: 'user-4',
+    createdAt: new Date('2024-01-25'),
+    lastEditedAt: new Date('2024-01-30'),
+    currentStatusId: 'status-3',
+    workflowId: 'workflow-1',
+    statusHistory: [
+      {
+        id: 'hist-11',
+        toStatusId: 'status-1',
+        userId: 'user-4',
+        timestamp: new Date('2024-01-25'),
+        comment: 'Project created',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-12',
+        fromStatusId: 'status-1',
+        toStatusId: 'status-2',
+        userId: 'user-4',
+        timestamp: new Date('2024-01-27'),
+        comment: 'Initial planning complete',
+        tasksCompleted: []
+      },
+      {
+        id: 'hist-13',
+        fromStatusId: 'status-2',
+        toStatusId: 'status-3',
+        userId: 'user-2',
+        timestamp: new Date('2024-01-30'),
+        comment: 'Design review passed, waiting for customer approval',
+        tasksCompleted: []
+      }
+    ]
+  },
+  {
+    id: 'project-6',
+    title: 'Community Solar - Apartment Complex',
+    description: '75kW shared solar system for multi-unit residential building',
+    creator: 'user-5',
+    createdAt: new Date('2024-01-30'),
+    lastEditedAt: new Date('2024-01-30'),
+    currentStatusId: 'status-1',
+    workflowId: 'workflow-1',
+    statusHistory: [
+      {
+        id: 'hist-14',
+        toStatusId: 'status-1',
+        userId: 'user-5',
+        timestamp: new Date('2024-01-30'),
+        comment: 'Project created',
+        tasksCompleted: []
+      }
+    ]
   }
 ];
