@@ -228,7 +228,10 @@ const WorkflowManagement: React.FC = () => {
                     Canvas
                   </button>
                   <button 
-                    onClick={() => setTransitionsWorkflow(workflow)}
+                    onClick={() => {
+                      const latest = workflowOperations.getById(workflow.id);
+                      setTransitionsWorkflow(latest || workflow);
+                    }}
                     style={{
                       backgroundColor: '#6a1b9a',
                       color: 'white',

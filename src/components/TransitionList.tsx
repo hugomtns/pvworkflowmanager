@@ -1,6 +1,8 @@
 import React from 'react';
 import type { Workflow, Status, Transition } from '../types';
 import { workflowOperations } from '../data/dataAccess';
+import TransitionForm from './TransitionForm';
+import { validateTransitionAgainstWorkflow } from '../utils/workflowValidation';
 
 interface TransitionListProps {
   workflow: Workflow;
@@ -10,6 +12,18 @@ interface TransitionListProps {
 }
 
 const TransitionList: React.FC<TransitionListProps> = ({ workflow, allStatuses, onClose, onUpdated }) => {
+  const [currentWorkflow, setCurrentWorkflow] = React.useState<Workflow>(() => {
+    const latest = workflowOperations.getById(workflow.id);
+    return latest || workflow;
+  });
+  const [showForm, setShowForm] = React.useState<{ mode: 'create' | 'edit'; transition?: Transition } | null>(null);
+  const [errorMessages, setErrorMessages] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const latest = workflowOperations.getById(workflow.id);
+    if (latest) setCurrentWorkflow(latest);
+  }, [workflow.id]);
+
   const statusIdToName = React.useMemo(() => {
     const map: Record<string, string> = {};
     allStatuses.forEach(s => { map[s.id] = s.name; });
@@ -18,17 +32,54 @@ const TransitionList: React.FC<TransitionListProps> = ({ workflow, allStatuses, 
 
   const handleDelete = (transitionId: string) => {
     if (!window.confirm('Delete this transition?')) return;
-    const remaining = (workflow.transitions || []).filter(t => t.id !== transitionId);
-    const updated = workflowOperations.update(workflow.id, { transitions: remaining });
+    const remaining = (currentWorkflow.transitions || []).filter(t => t.id !== transitionId);
+    const updated = workflowOperations.update(currentWorkflow.id, { transitions: remaining });
     if (!updated) {
       alert('Failed to delete transition.');
       return;
     }
+    setCurrentWorkflow(updated);
     if (onUpdated) onUpdated(updated);
   };
 
-  const transitions: Transition[] = workflow.transitions || [];
+  const transitions: Transition[] = currentWorkflow.transitions || [];
   const hasTransitions = transitions.length > 0;
+
+  const handleCreate = (t: Transition) => {
+    const next = [...(currentWorkflow.transitions || []), t];
+    const validation = validateTransitionAgainstWorkflow(currentWorkflow, next, t);
+    if (!validation.valid) {
+      setErrorMessages(validation.errors);
+      return;
+    }
+    const updated = workflowOperations.update(currentWorkflow.id, { transitions: next });
+    if (!updated) {
+      setErrorMessages(['Failed to add transition.']);
+      return;
+    }
+    setCurrentWorkflow(updated);
+    setShowForm(null);
+    setErrorMessages([]);
+    if (onUpdated) onUpdated(updated);
+  };
+
+  const handleEdit = (t: Transition) => {
+    const next = (currentWorkflow.transitions || []).map(x => x.id === t.id ? t : x);
+    const validation = validateTransitionAgainstWorkflow(currentWorkflow, next, t, t.id);
+    if (!validation.valid) {
+      setErrorMessages(validation.errors);
+      return;
+    }
+    const updated = workflowOperations.update(currentWorkflow.id, { transitions: next });
+    if (!updated) {
+      setErrorMessages(['Failed to save transition.']);
+      return;
+    }
+    setCurrentWorkflow(updated);
+    setShowForm(null);
+    setErrorMessages([]);
+    if (onUpdated) onUpdated(updated);
+  };
 
   return (
     <div style={{
@@ -53,7 +104,7 @@ const TransitionList: React.FC<TransitionListProps> = ({ workflow, allStatuses, 
         overflow: 'auto'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0 }}>Transitions — {workflow.name}</h3>
+          <h3 style={{ margin: 0 }}>Transitions — {currentWorkflow.name}</h3>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               style={{
@@ -62,11 +113,9 @@ const TransitionList: React.FC<TransitionListProps> = ({ workflow, allStatuses, 
                 border: 'none',
                 padding: '0.5rem 0.75rem',
                 borderRadius: '4px',
-                cursor: 'pointer',
-                opacity: 0.8
+                cursor: 'pointer'
               }}
-              disabled
-              title="Add Transition (coming next)"
+              onClick={() => setShowForm({ mode: 'create' })}
             >
               + Add Transition
             </button>
@@ -84,6 +133,21 @@ const TransitionList: React.FC<TransitionListProps> = ({ workflow, allStatuses, 
             </button>
           </div>
         </div>
+
+        {errorMessages.length > 0 && (
+          <div style={{
+            backgroundColor: '#fdecea',
+            border: '1px solid #f5c2c0',
+            color: '#b71c1c',
+            padding: '0.75rem',
+            borderRadius: '6px',
+            marginBottom: '0.75rem'
+          }}>
+            {errorMessages.map((e, i) => (
+              <div key={i} style={{ fontSize: '0.9rem' }}>{e}</div>
+            ))}
+          </div>
+        )}
 
         {!hasTransitions ? (
           <div style={{
@@ -134,11 +198,9 @@ const TransitionList: React.FC<TransitionListProps> = ({ workflow, allStatuses, 
                     padding: '0.4rem 0.6rem',
                     borderRadius: '4px',
                     fontSize: '0.85rem',
-                    cursor: 'pointer',
-                    opacity: 0.8
+                    cursor: 'pointer'
                   }}
-                  disabled
-                  title="Edit (coming next)"
+                  onClick={() => setShowForm({ mode: 'edit', transition: t })}
                 >
                   Edit
                 </button>
@@ -161,6 +223,15 @@ const TransitionList: React.FC<TransitionListProps> = ({ workflow, allStatuses, 
           </div>
         )}
       </div>
+      {showForm && (
+        <TransitionForm
+          workflow={currentWorkflow}
+          allStatuses={allStatuses}
+          initial={showForm.mode === 'edit' ? showForm.transition : undefined}
+          onCancel={() => setShowForm(null)}
+          onSave={(t) => showForm.mode === 'create' ? handleCreate(t) : handleEdit(t)}
+        />
+      )}
     </div>
   );
 };
