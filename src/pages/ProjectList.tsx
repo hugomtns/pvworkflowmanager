@@ -122,6 +122,7 @@ const ProjectList: React.FC = () => {
                   borderRadius: '8px',
                   padding: '1.5rem',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'left',
                   cursor: 'pointer',
                   transition: 'box-shadow 0.2s'
                 }}
@@ -165,12 +166,19 @@ const ProjectList: React.FC = () => {
 
                 {/* Compact tasks summary - click to open modal with details */}
                 <div style={{ margin: '0.6rem 0' }}>
-                  <button
-                    onClick={() => setTaskModalProject(project)}
-                    style={{ background: 'transparent', border: 'none', color: '#1976d2', cursor: 'pointer', fontWeight: 700 }}
-                  >
-                    Completed tasks: {completedCount}/{requiredCount}
-                  </button>
+                  {(() => {
+                    const hasTasks = requiredCount > 0;
+                    const allDone = hasTasks && completedCount >= requiredCount;
+                    const summaryColor = !hasTasks ? '#1976d2' : allDone ? '#388e3c' : '#d32f2f';
+                    return (
+                      <button
+                        onClick={() => setTaskModalProject(project)}
+                        style={{ background: 'transparent', border: 'none', color: summaryColor, cursor: 'pointer', fontWeight: 700 }}
+                      >
+                        Completed tasks: {completedCount}/{requiredCount}
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 {/* Project Metadata */}
