@@ -138,6 +138,65 @@ export const workflowOperations = {
   getById: (id: string): Workflow | undefined => {
     const workflows = loadFromStorage<Workflow>(STORAGE_KEYS.WORKFLOWS);
     return workflows.find(workflow => workflow.id === id);
+  },
+
+  create: (workflow: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>): Workflow => {
+    const workflows = loadFromStorage<Workflow>(STORAGE_KEYS.WORKFLOWS);
+    
+    // If this is set as default, remove default from other workflows of same entity type
+    if (workflow.isDefault) {
+      workflows.forEach(w => {
+        if (w.entityType === workflow.entityType && w.isDefault) {
+          w.isDefault = false;
+        }
+      });
+    }
+    
+    const newWorkflow: Workflow = {
+      ...workflow,
+      id: `workflow-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    workflows.push(newWorkflow);
+    saveToStorage(STORAGE_KEYS.WORKFLOWS, workflows);
+    return newWorkflow;
+  },
+  
+  update: (id: string, updates: Partial<Workflow>): Workflow | null => {
+    const workflows = loadFromStorage<Workflow>(STORAGE_KEYS.WORKFLOWS);
+    const index = workflows.findIndex(workflow => workflow.id === id);
+    
+    if (index === -1) return null;
+    
+    // If this is being set as default, remove default from other workflows of same entity type
+    if (updates.isDefault) {
+      workflows.forEach(w => {
+        if (w.entityType === (updates.entityType || workflows[index].entityType) && w.isDefault && w.id !== id) {
+          w.isDefault = false;
+        }
+      });
+    }
+    
+    workflows[index] = {
+      ...workflows[index],
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    saveToStorage(STORAGE_KEYS.WORKFLOWS, workflows);
+    return workflows[index];
+  },
+  
+  delete: (id: string): boolean => {
+    const workflows = loadFromStorage<Workflow>(STORAGE_KEYS.WORKFLOWS);
+    const filteredWorkflows = workflows.filter(workflow => workflow.id !== id);
+    
+    if (filteredWorkflows.length === workflows.length) return false;
+    
+    saveToStorage(STORAGE_KEYS.WORKFLOWS, filteredWorkflows);
+    return true;
   }
 };
 

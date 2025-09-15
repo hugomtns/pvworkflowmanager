@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { workflowOperations, statusOperations } from '../data/dataAccess';
+import { workflowOperations, statusOperations, projectOperations } from '../data/dataAccess';
+import WorkflowForm from '../components/WorkflowForm';
 import type { Workflow, Status } from '../types';
 
 const WorkflowManagement: React.FC = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState<Workflow | undefined>(undefined);
 
   // Load data when component mounts
   useEffect(() => {
-    setWorkflows(workflowOperations.getAll());
+    loadWorkflows();
     setStatuses(statusOperations.getAll());
   }, []);
+
+  const loadWorkflows = () => {
+    setWorkflows(workflowOperations.getAll());
+  };
 
   // Filter workflows based on search term
   const filteredWorkflows = workflows.filter(workflow =>
@@ -32,6 +39,60 @@ const WorkflowManagement: React.FC = () => {
     return date.toLocaleDateString();
   };
 
+  // Handle workflow actions
+  const handleCreateWorkflow = () => {
+    setEditingWorkflow(undefined);
+    setShowForm(true);
+  };
+
+  const handleEditWorkflow = (workflow: Workflow) => {
+    setEditingWorkflow(workflow);
+    setShowForm(true);
+  };
+
+  const handleDeleteWorkflow = (workflowId: string) => {
+    // Check if workflow is in use by any projects
+    const projects = projectOperations.getAll();
+    const projectsUsingWorkflow = projects.filter(project => project.workflowId === workflowId);
+
+    if (projectsUsingWorkflow.length > 0) {
+      alert(`Cannot delete this workflow. It is currently used by ${projectsUsingWorkflow.length} project(s): ${projectsUsingWorkflow.map(p => p.title).join(', ')}`);
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete this workflow? This action cannot be undone.')) {
+      const success = workflowOperations.delete(workflowId);
+      if (success) {
+        loadWorkflows();
+      } else {
+        alert('Failed to delete workflow.');
+      }
+    }
+  };
+
+  const handleSaveWorkflow = (workflowData: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (editingWorkflow) {
+      // Update existing workflow
+      const updated = workflowOperations.update(editingWorkflow.id, workflowData);
+      if (!updated) {
+        alert('Failed to update workflow.');
+        return;
+      }
+    } else {
+      // Create new workflow
+      workflowOperations.create(workflowData);
+    }
+
+    loadWorkflows();
+    setShowForm(false);
+    setEditingWorkflow(undefined);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingWorkflow(undefined);
+  };
+
   return (
     <div>
       <div style={{ 
@@ -41,14 +102,17 @@ const WorkflowManagement: React.FC = () => {
         marginBottom: '2rem'
       }}>
         <h2 style={{ margin: 0 }}>Manage Workflows ({filteredWorkflows.length})</h2>
-        <button style={{
-          backgroundColor: '#9c27b0',
-          color: 'white',
-          border: 'none',
-          padding: '0.75rem 1.5rem',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}>
+        <button 
+          onClick={handleCreateWorkflow}
+          style={{
+            backgroundColor: '#9c27b0',
+            color: 'white',
+            border: 'none',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
           Create New Workflow
         </button>
       </div>
@@ -136,15 +200,18 @@ const WorkflowManagement: React.FC = () => {
                 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button style={{
-                    backgroundColor: '#2196f3',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '3px',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}>
+                  <button 
+                    onClick={() => handleEditWorkflow(workflow)}
+                    style={{
+                      backgroundColor: '#2196f3',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '3px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
                     Edit
                   </button>
                   <button style={{
@@ -157,6 +224,20 @@ const WorkflowManagement: React.FC = () => {
                     cursor: 'pointer'
                   }}>
                     Canvas
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteWorkflow(workflow.id)}
+                    style={{
+                      backgroundColor: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '3px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Delete
                   </button>
                 </div>
               </div>
@@ -246,6 +327,15 @@ const WorkflowManagement: React.FC = () => {
           transition configuration, and approval setup.
         </p>
       </div>
+
+      {/* Workflow Form Modal */}
+      {showForm && (
+        <WorkflowForm
+          workflow={editingWorkflow}
+          onSave={handleSaveWorkflow}
+          onCancel={handleCancelForm}
+        />
+      )}
     </div>
   );
 };
