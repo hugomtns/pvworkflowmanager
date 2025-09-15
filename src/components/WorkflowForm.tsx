@@ -5,7 +5,7 @@ import type { Workflow, Status } from '../types';
 
 interface WorkflowLayoutData {
   statusPositions: { [statusId: string]: { x: number; y: number } };
-  connections: Array<{ fromStatusId: string; toStatusId: string }>;
+  connections: Array<{ id: string; fromStatusId: string; toStatusId: string }>;
 }
 
 interface WorkflowFormProps {
@@ -27,8 +27,12 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
   const [availableStatuses, setAvailableStatuses] = useState<Status[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<Status[]>([]);
   const [workflowLayout, setWorkflowLayout] = useState<WorkflowLayoutData>({
-    statusPositions: {},
-    connections: []
+    statusPositions: workflow?.layout?.statusPositions || {},
+    connections: (workflow?.transitions || []).map((t, index) => ({
+      id: t.id || `trans-${index}`,
+      fromStatusId: t.fromStatusId,
+      toStatusId: t.toStatusId
+    }))
   });
 
   const entityTypes = ['project', 'campaign', 'design', 'file'];
@@ -47,9 +51,10 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
     );
     setSelectedStatuses(workflowStatuses);
 
-    // Initialize workflow layout from existing workflow transitions
+    // Keep connections in sync if workflow transitions change while editing
     if (workflow?.transitions) {
-      const connections = workflow.transitions.map(t => ({
+      const connections = workflow.transitions.map((t, index) => ({
+        id: t.id || `trans-${index}`,
         fromStatusId: t.fromStatusId,
         toStatusId: t.toStatusId
       }));
@@ -103,7 +108,10 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
       onSave({
         ...formData,
         statuses: selectedStatuses.map(s => s.id),
-        transitions
+        transitions,
+        layout: {
+          statusPositions: workflowLayout.statusPositions
+        }
       });
     }
   };
@@ -353,16 +361,14 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
                   borderRadius: '8px',
                   backgroundColor: 'white'
                 }}>
-                  {/* 
-                    The 'initialConnections' prop is not defined in WorkflowCanvasProps.
-                    Remove it to fix the type error.
-                  */}
                   <WorkflowCanvas 
                     statuses={selectedStatuses}
                     width={900}
                     height={400}
                     onStatusMove={handleStatusMove}
                     onConnectionsChange={handleConnectionsChange}
+                    initialPositions={workflowLayout.statusPositions}
+                    initialConnections={workflowLayout.connections}
                   />
                 </div>
                 

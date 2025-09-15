@@ -22,6 +22,10 @@ export interface Status {
     isDefault: boolean;
     createdAt: Date;
     updatedAt: Date;
+    // Optional persisted layout for canvas-based editor
+    layout?: {
+      statusPositions: { [statusId: string]: { x: number; y: number } };
+    };
   }
   
   // Transition Definition

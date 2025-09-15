@@ -22,6 +22,8 @@ interface WorkflowCanvasProps {
   height?: number;
   onStatusMove?: (statusId: string, x: number, y: number) => void;
   onConnectionsChange?: (connections: Connection[]) => void;
+  initialPositions?: { [statusId: string]: { x: number; y: number } };
+  initialConnections?: Array<{ id: string; fromStatusId: string; toStatusId: string }>;
 }
 
 const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ 
@@ -29,19 +31,26 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   width = 800, 
   height = 600,
   onStatusMove,
-  onConnectionsChange 
+  onConnectionsChange,
+  initialPositions,
+  initialConnections
 }) => {
   // Create initial node positions with better spacing
   const [statusNodes, setStatusNodes] = useState<StatusNode[]>(() => {
-    return statuses.map((status, index) => ({
-      id: status.id,
-      status,
-      x: 100 + ((index % 3) * 200), // 3 columns
-      y: 80 + (Math.floor(index / 3) * 150) // Multiple rows
-    }));
+    return statuses.map((status, index) => {
+      const fallbackX = 100 + ((index % 3) * 200);
+      const fallbackY = 80 + (Math.floor(index / 3) * 150);
+      const pos = initialPositions?.[status.id];
+      return {
+        id: status.id,
+        status,
+        x: pos?.x ?? fallbackX,
+        y: pos?.y ?? fallbackY
+      };
+    });
   });
 
-  const [connections, setConnections] = useState<Connection[]>([]);
+  const [connections, setConnections] = useState<Connection[]>(() => initialConnections || []);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStart, setConnectionStart] = useState<string | null>(null);
   const [tempConnection, setTempConnection] = useState<{ x: number; y: number } | null>(null);
@@ -55,16 +64,27 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
     setStatusNodes(prev => {
       const newNodes = statuses.map((status, index) => {
         const existingNode = prev.find(node => node.id === status.id);
-        return existingNode || {
+        if (existingNode) return existingNode;
+        const fallbackX = 100 + ((index % 3) * 200);
+        const fallbackY = 80 + (Math.floor(index / 3) * 150);
+        const pos = initialPositions?.[status.id];
+        return {
           id: status.id,
           status,
-          x: 100 + ((index % 3) * 200),
-          y: 80 + (Math.floor(index / 3) * 150)
+          x: pos?.x ?? fallbackX,
+          y: pos?.y ?? fallbackY
         };
       });
       return newNodes;
     });
-  }, [statuses]);
+  }, [statuses, initialPositions]);
+
+  // If initialConnections changes (editing a different workflow), update them
+  React.useEffect(() => {
+    if (initialConnections) {
+      setConnections(initialConnections);
+    }
+  }, [initialConnections]);
 
   // Handle dragging status nodes
   const handleStatusDrag = useCallback((statusId: string, x: number, y: number) => {
@@ -119,7 +139,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   };
 
   // Handle mouse move for temporary connection line
-  const handleMouseMove = (e: any) => {
+  const handleMouseMove = () => {
     if (isConnecting && connectionStart) {
       const stage = stageRef.current;
       const pointer = stage.getPointerPosition();
