@@ -47,8 +47,8 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   const [tempConnection, setTempConnection] = useState<{ x: number; y: number } | null>(null);
 
   const stageRef = useRef<any>(null);
-  const nodeWidth = 140;
-  const nodeHeight = 70;
+  const nodeWidth = 120;
+  const nodeHeight = 50;
 
   // Update status nodes when statuses prop changes
   React.useEffect(() => {
@@ -134,10 +134,10 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
     setTempConnection(null);
   };
 
-  // Get node center position
-  const getNodeCenter = (node: StatusNode) => ({
-    x: node.x + nodeWidth / 2,
-    y: node.y + nodeHeight / 2
+  // Get node connection points (properly outside the box)
+  const getNodeConnectionPoints = (node: StatusNode) => ({
+    output: { x: node.x + nodeWidth + 6, y: node.y + nodeHeight / 2 },
+    input: { x: node.x - 6, y: node.y + nodeHeight / 2 }
   });
 
   // Delete connection
@@ -171,7 +171,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
       }}>
         {isConnecting 
           ? 'Click on another status to create connection...' 
-          : 'Drag nodes to move • Click connection handles to connect'
+          : 'Click right edge to start connection • Click left edge to end connection'
         }
       </div>
 
@@ -190,25 +190,26 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
             
             if (!fromNode || !toNode) return null;
             
-            const fromCenter = getNodeCenter(fromNode);
-            const toCenter = getNodeCenter(toNode);
+            const fromPoints = getNodeConnectionPoints(fromNode);
+            const toPoints = getNodeConnectionPoints(toNode);
+            const fromPos = fromPoints.output;
+            const toPos = toPoints.input;
             
             return (
               <Group key={connection.id}>
                 {/* Connection Line */}
                 <Line
-                  points={[fromCenter.x, fromCenter.y, toCenter.x, toCenter.y]}
+                  points={[fromPos.x, fromPos.y, toPos.x, toPos.y]}
                   stroke="#666"
                   strokeWidth={2}
-                  dash={[5, 5]}
                 />
                 
                 {/* Arrow Head */}
                 <Line
                   points={[
-                    toCenter.x - 10, toCenter.y - 10,
-                    toCenter.x, toCenter.y,
-                    toCenter.x - 10, toCenter.y + 10
+                    toPos.x - 8, toPos.y - 5,
+                    toPos.x, toPos.y,
+                    toPos.x - 8, toPos.y + 5
                   ]}
                   stroke="#666"
                   strokeWidth={2}
@@ -218,12 +219,12 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
                 
                 {/* Delete Button (on connection midpoint) */}
                 <Circle
-                  x={(fromCenter.x + toCenter.x) / 2}
-                  y={(fromCenter.y + toCenter.y) / 2}
-                  radius={8}
+                  x={(fromPos.x + toPos.x) / 2}
+                  y={(fromPos.y + toPos.y) / 2}
+                  radius={6}
                   fill="#f44336"
                   stroke="white"
-                  strokeWidth={2}
+                  strokeWidth={1}
                   onClick={(e) => {
                     e.cancelBubble = true;
                     deleteConnection(connection.id);
@@ -238,10 +239,10 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
                   }}
                 />
                 <Text
-                  x={(fromCenter.x + toCenter.x) / 2 - 3}
-                  y={(fromCenter.y + toCenter.y) / 2 - 4}
+                  x={(fromPos.x + toPos.x) / 2 - 2}
+                  y={(fromPos.y + toPos.y) / 2 - 3}
                   text="×"
-                  fontSize={10}
+                  fontSize={8}
                   fill="white"
                   onClick={(e) => {
                     e.cancelBubble = true;
@@ -257,11 +258,12 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
             (() => {
               const startNode = statusNodes.find(n => n.id === connectionStart);
               if (!startNode) return null;
-              const startCenter = getNodeCenter(startNode);
+              const startPoints = getNodeConnectionPoints(startNode);
+              const startPos = startPoints.output;
               
               return (
                 <Line
-                  points={[startCenter.x, startCenter.y, tempConnection.x, tempConnection.y]}
+                  points={[startPos.x, startPos.y, tempConnection.x, tempConnection.y]}
                   stroke="#2196f3"
                   strokeWidth={2}
                   dash={[3, 3]}
@@ -353,44 +355,58 @@ const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({
         fill={node.status.color}
       />
       
-      {/* Status Name */}
+      {/* Status Name ONLY - No Description */}
       <Text
-        x={node.x + 30}
-        y={node.y + 8}
+        x={node.x + nodeWidth / 2}
+        y={node.y + nodeHeight / 2}
         text={node.status.name}
-        fontSize={13}
+        fontSize={12}
         fontStyle="bold"
         fill="#333"
-        width={nodeWidth - 60}
+        width={nodeWidth - 20}
+        align="center"
       />
       
-      {/* Status Description (truncated) */}
-      <Text
-        x={node.x + 30}
-        y={node.y + 25}
-        text={node.status.description.length > 15 
-          ? node.status.description.substring(0, 15) + '...'
-          : node.status.description
-        }
-        fontSize={10}
-        fill="#666"
-        width={nodeWidth - 60}
-      />
-      
-      {/* Connection Handle (right side of node) */}
+      {/* Connection Handles - Always visible on hover */}
+      {/* Input Handle (left edge) */}
       <Circle
-        x={node.x + nodeWidth - 15}
+        x={node.x - 6}
         y={node.y + nodeHeight / 2}
         radius={6}
-        fill={isConnecting ? '#2196f3' : '#4caf50'}
+        fill={isConnecting ? '#2196f3' : '#666'}
+        stroke="white"
+        strokeWidth={2}
+        onClick={(e) => {
+          e.cancelBubble = true;
+          if (isConnecting) {
+            onConnectionEnd(node.id);
+          }
+        }}
+        onMouseEnter={(e: any) => {
+          e.target.fill('#2196f3');
+          e.target.scaleX(1.3);
+          e.target.scaleY(1.3);
+        }}
+        onMouseLeave={(e: any) => {
+          e.target.fill(isConnecting ? '#2196f3' : '#666');
+          e.target.scaleX(1);
+          e.target.scaleY(1);
+        }}
+        opacity={0.8}
+      />
+      
+      {/* Output Handle (right edge) */}
+      <Circle
+        x={node.x + nodeWidth + 6}
+        y={node.y + nodeHeight / 2}
+        radius={6}
+        fill={isConnectionStart ? '#ff5722' : '#4caf50'}
         stroke="white"
         strokeWidth={2}
         onClick={(e) => {
           e.cancelBubble = true;
           if (!isConnecting) {
             onConnectionStart(node.id);
-          } else {
-            onConnectionEnd(node.id);
           }
         }}
         onMouseEnter={(e: any) => {
@@ -401,16 +417,7 @@ const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({
           e.target.scaleX(1);
           e.target.scaleY(1);
         }}
-      />
-      
-      {/* Connection handle tooltip */}
-      <Text
-        x={node.x + nodeWidth - 35}
-        y={node.y + nodeHeight / 2 + 15}
-        text="●"
-        fontSize={8}
-        fill="#4caf50"
-        visible={!isConnecting}
+        opacity={0.8}
       />
     </Group>
   );
