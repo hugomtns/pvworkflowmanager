@@ -31,7 +31,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
     connections: (workflow?.transitions || []).map((t, index) => ({
       id: t.id || `trans-${index}`,
       fromStatusId: t.fromStatusId,
-      toStatusId: t.toStatusId
+      toStatusId: t.toStatusId,
+      requiresApproval: t.requiresApproval
     }))
   });
 
@@ -56,7 +57,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
       const connections = workflow.transitions.map((t, index) => ({
         id: t.id || `trans-${index}`,
         fromStatusId: t.fromStatusId,
-        toStatusId: t.toStatusId
+        toStatusId: t.toStatusId,
+        requiresApproval: t.requiresApproval
       }));
       setWorkflowLayout(prev => ({
         ...prev,
@@ -136,7 +138,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ workflow, onSave, onCancel 
     }));
   };
 
-  const handleConnectionsChange = (connections: Array<{ id: string; fromStatusId: string; toStatusId: string }>) => {
+  const handleConnectionsChange = (connections: Array<{ id: string; fromStatusId: string; toStatusId: string; requiresApproval?: boolean }>) => {
     setWorkflowLayout(prev => ({
       ...prev,
       connections

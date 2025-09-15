@@ -14,6 +14,7 @@ interface Connection {
   id: string;
   fromStatusId: string;
   toStatusId: string;
+  requiresApproval?: boolean;
 }
 
 interface WorkflowCanvasProps {
@@ -23,7 +24,7 @@ interface WorkflowCanvasProps {
   onStatusMove?: (statusId: string, x: number, y: number) => void;
   onConnectionsChange?: (connections: Connection[]) => void;
   initialPositions?: { [statusId: string]: { x: number; y: number } };
-  initialConnections?: Array<{ id: string; fromStatusId: string; toStatusId: string }>;
+  initialConnections?: Array<{ id: string; fromStatusId: string; toStatusId: string; requiresApproval?: boolean }>;
 }
 
 const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ 
@@ -120,7 +121,8 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         const newConnection: Connection = {
           id: `conn-${Date.now()}`,
           fromStatusId: connectionStart,
-          toStatusId: statusId
+          toStatusId: statusId,
+          requiresApproval: false
         };
         
         const newConnections = [...connections, newConnection];
@@ -215,13 +217,16 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
             const fromPos = fromPoints.output;
             const toPos = toPoints.input;
             
+            const highlightColor = connection.requiresApproval ? '#d32f2f' : '#666';
+            const strokeDash = connection.requiresApproval ? [6, 4] : undefined;
             return (
               <Group key={connection.id}>
                 {/* Connection Line */}
                 <Line
                   points={[fromPos.x, fromPos.y, toPos.x, toPos.y]}
-                  stroke="#666"
-                  strokeWidth={2}
+                  stroke={highlightColor}
+                  strokeWidth={connection.requiresApproval ? 3 : 2}
+                  dash={strokeDash}
                 />
                 
                 {/* Arrow Head */}
@@ -231,8 +236,8 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
                     toPos.x, toPos.y,
                     toPos.x - 8, toPos.y + 5
                   ]}
-                  stroke="#666"
-                  strokeWidth={2}
+                  stroke={highlightColor}
+                  strokeWidth={connection.requiresApproval ? 3 : 2}
                   lineCap="round"
                   lineJoin="round"
                 />
@@ -269,6 +274,27 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
                     deleteConnection(connection.id);
                   }}
                 />
+                {connection.requiresApproval && (
+                  <Group>
+                    <Rect
+                      x={(fromPos.x + toPos.x) / 2 - 22}
+                      y={(fromPos.y + toPos.y) / 2 - 22}
+                      width={44}
+                      height={14}
+                      fill="#fdecea"
+                      stroke="#f5c2c0"
+                      cornerRadius={4}
+                    />
+                    <Text
+                      x={(fromPos.x + toPos.x) / 2 - 19}
+                      y={(fromPos.y + toPos.y) / 2 - 20}
+                      text="Approval"
+                      fontSize={10}
+                      fill="#b71c1c"
+                      fontStyle="bold"
+                    />
+                  </Group>
+                )}
               </Group>
             );
           })}
