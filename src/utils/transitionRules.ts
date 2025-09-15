@@ -43,4 +43,20 @@ export const describeTransitionRequirements = (t: Transition, idToUserName?: Rec
   };
 };
 
+// Permission helper combining approval and task blocking rules
+export const canUserTransition = (user: { id: string; role: string }, transition: Transition, blockedByTasks: boolean) => {
+  if (blockedByTasks) {
+    return { allowed: false, reason: 'Required tasks are incomplete for this transition.' };
+  }
+  // Admins bypass approval roles
+  if (user.role === 'admin') return { allowed: true };
+
+  // Otherwise check approval requirements
+  if (!transition.requiresApproval) return { allowed: true };
+  const roleAllowed = (transition.approverRoles || []).includes(user.role);
+  const userAllowed = (transition.approverUserIds || []).includes(user.id);
+  if (roleAllowed || userAllowed) return { allowed: true };
+  return { allowed: false, reason: 'You do not have permission to execute this approval-required transition.' };
+};
+
 

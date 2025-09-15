@@ -25,6 +25,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const isAdmin = currentUser.role === 'admin';
 
+  // Keep currentUser in sync when userRole changes (pick the first user with that role)
+  React.useEffect(() => {
+    const match = users.find(u => u.role === userRole);
+    if (match) setCurrentUser(match);
+  }, [userRole, users]);
+
   const value: AppContextType = {
     currentUser,
     setCurrentUser,

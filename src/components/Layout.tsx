@@ -1,13 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { reseedData } from '../data/dataAccess';
+import { AppContext } from '../context/AppContext';
 
-interface LayoutProps {
-  userRole: 'admin' | 'user';
-  onRoleChange: (role: 'admin' | 'user') => void;
-}
-
-const Layout: React.FC<LayoutProps> = ({ userRole, onRoleChange }) => {
+const Layout: React.FC = () => {
+  const { userRole, setUserRole } = useContext(AppContext);
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
       {/* Header */}
@@ -24,11 +21,11 @@ const Layout: React.FC<LayoutProps> = ({ userRole, onRoleChange }) => {
         </h1>
         
         {/* Role Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span>Role:</span>
           <select 
             value={userRole} 
-            onChange={(e) => onRoleChange(e.target.value as 'admin' | 'user')}
+            onChange={(e) => setUserRole(e.target.value as 'admin' | 'user')}
             style={{
               padding: '0.5rem',
               borderRadius: '4px',

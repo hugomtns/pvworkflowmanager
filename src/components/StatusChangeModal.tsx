@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useContext } from 'react';
 import type { Project, Workflow, Status, User, Transition } from '../types';
-import { getValidNextTransitions, describeTransitionRequirements } from '../utils/transitionRules';
-import { canUserExecuteTransition } from '../utils/permissions';
+import { getValidNextTransitions, describeTransitionRequirements, canUserTransition } from '../utils/transitionRules';
 import type { NextTransitionOption } from '../utils/transitionRules';
 import { AppContext } from '../context/AppContext';
 
@@ -120,13 +119,9 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
                 setError('No current user available.');
                 return;
               }
-              const perm = canUserExecuteTransition(currentUser, selected.transition);
+              const perm = canUserTransition(currentUser, selected.transition, !!selected.blockedByTasks);
               if (!perm.allowed) {
                 setError(perm.reason || 'You are not allowed to perform this transition.');
-                return;
-              }
-              if (selected.blockedByTasks) {
-                setError('Transition blocked: required tasks are incomplete.');
                 return;
               }
               setError(undefined);
