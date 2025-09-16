@@ -61,6 +61,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
   const nodeHeight = 50;
   const [scale, setScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
+  const [isDraggingNode, setIsDraggingNode] = useState(false);
 
   // Update status nodes when statuses prop changes
   React.useEffect(() => {
@@ -147,7 +148,9 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
     if (isConnecting && connectionStart) {
       const stage = stageRef.current;
       const pointer = stage.getPointerPosition();
-      setTempConnection({ x: pointer.x, y: pointer.y });
+      if (pointer) {
+        setTempConnection({ x: pointer.x, y: pointer.y });
+      }
     }
   };
 
@@ -205,13 +208,16 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         ref={stageRef}
         onMouseMove={handleMouseMove}
         onClick={handleBackgroundClick}
-        draggable // enable panning by dragging the stage
+        draggable={!isDraggingNode} // enable panning by dragging the stage, but disable when dragging nodes
         scaleX={scale}
         scaleY={scale}
         x={stagePosition.x}
         y={stagePosition.y}
         onDragEnd={(e) => {
-          setStagePosition({ x: e.target.x(), y: e.target.y() });
+          // Only update stage position if we're actually dragging the stage, not a child element
+          if (e.target === e.currentTarget) {
+            setStagePosition({ x: e.target.x(), y: e.target.y() });
+          }
         }}
         onWheel={(e: any) => {
           e.evt.preventDefault();
@@ -362,6 +368,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
               onConnectionEnd={handleConnectionEnd}
               isConnecting={isConnecting}
               isConnectionStart={connectionStart === node.id}
+              setIsDraggingNode={setIsDraggingNode}
             />
           ))}
         </Layer>
@@ -380,17 +387,19 @@ interface StatusNodeComponentProps {
   onConnectionEnd: (statusId: string) => void;
   isConnecting: boolean;
   isConnectionStart: boolean;
+  setIsDraggingNode: (dragging: boolean) => void;
 }
 
-const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({ 
-  node, 
-  nodeWidth, 
-  nodeHeight, 
-  onDrag, 
+const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({
+  node,
+  nodeWidth,
+  nodeHeight,
+  onDrag,
   onConnectionStart,
   onConnectionEnd,
   isConnecting,
-  isConnectionStart
+  isConnectionStart,
+  setIsDraggingNode
 }) => {
   return (
     <Group>
@@ -405,8 +414,24 @@ const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({
         strokeWidth={isConnectionStart ? 4 : 3}
         cornerRadius={8}
         draggable
+        onDragStart={(e: any) => {
+          // Disable stage dragging when dragging a node
+          setIsDraggingNode(true);
+          e.cancelBubble = true;
+        }}
+        onDragMove={(e: any) => {
+          // Prevent stage from receiving drag events
+          e.cancelBubble = true;
+        }}
         onDragEnd={(e: any) => {
-          onDrag(node.id, e.target.x(), e.target.y());
+          // Get the actual position relative to the stage transform
+          const newX = e.target.x();
+          const newY = e.target.y();
+          onDrag(node.id, newX, newY);
+
+          // Re-enable stage dragging
+          setIsDraggingNode(false);
+          e.cancelBubble = true;
         }}
         onMouseEnter={(e: any) => {
           e.target.shadowColor('black');
