@@ -68,6 +68,54 @@ export interface Status {
     workflowId: string;
     statusHistory: StatusHistoryEntry[];
   }
+
+  // Design Entity - PV layout designs within projects
+  export interface Design {
+    id: string;
+    projectId: string; // Reference to parent project
+    title: string;
+    description: string;
+    creator: string;
+    createdAt: Date;
+    lastEditedAt: Date;
+    // PV System Specifications
+    systemSpecs: {
+      // Panel specifications
+      panelCount: number;
+      panelWattage: number; // Watts per panel
+      panelManufacturer: string;
+      panelModel: string;
+      // System production data
+      dcCapacity: number; // kW DC
+      acCapacity: number; // kW AC
+      dcAcRatio: number; // DC/AC ratio
+      // Annual production estimates
+      annualProduction: number; // kWh/year
+      specificYield: number; // kWh/kW/year
+      // System layout
+      arrayTilt: number; // degrees
+      arrayAzimuth: number; // degrees (180 = south)
+      roofArea: number; // sq ft
+      moduleArea: number; // sq ft
+      // Financial estimates
+      systemCost: number; // USD
+      costPerWatt: number; // USD/W
+      paybackPeriod?: number; // years
+      // Environmental impact
+      co2OffsetAnnual: number; // lbs CO2/year
+    };
+    // Design metadata
+    designVersion: string; // e.g., "v1.0", "v2.1"
+    isActive: boolean; // Only one active design per project
+    approvalStatus: 'draft' | 'pending' | 'approved' | 'rejected';
+    // File attachments (future use)
+    attachments?: {
+      id: string;
+      filename: string;
+      url: string;
+      type: 'layout' | 'spec_sheet' | 'permit' | 'photo';
+    }[];
+  }
   
   // Status History
   export interface StatusHistoryEntry {
@@ -111,6 +159,13 @@ export interface Status {
     setTransitions: (transitions: Transition[]) => void;
     users: User[];
     setUsers: (users: User[]) => void;
+
+    // Design Management additions
+    designs: Design[];
+    setDesigns: (designs: Design[]) => void;
+    addDesign: (design: Design) => void;
+    updateDesign: (design: Design) => void;
+    deleteDesign: (designId: string) => void;
 
     isAdmin: boolean;
   }

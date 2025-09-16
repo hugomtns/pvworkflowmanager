@@ -405,6 +405,78 @@ export const validateTransition = (transition: any): ValidationResult => {
 };
 
 /**
+ * Validation rules for Project entities
+ */
+const projectValidationRules = {
+  title: {
+    required: {
+      field: 'title' as const,
+      message: 'Project title is required',
+      validate: isRequired
+    },
+    minLength: {
+      field: 'title' as const,
+      message: 'Project title must be at least 3 characters',
+      validate: minLength(3)
+    },
+    maxLength: {
+      field: 'title' as const,
+      message: 'Project title must be no more than 100 characters',
+      validate: maxLength(100)
+    }
+  },
+  description: {
+    required: {
+      field: 'description' as const,
+      message: 'Project description is required',
+      validate: isRequired
+    },
+    minLength: {
+      field: 'description' as const,
+      message: 'Project description must be at least 10 characters',
+      validate: minLength(10)
+    },
+    maxLength: {
+      field: 'description' as const,
+      message: 'Project description must be no more than 500 characters',
+      validate: maxLength(500)
+    }
+  },
+  workflowId: {
+    required: {
+      field: 'workflowId' as const,
+      message: 'Workflow selection is required',
+      validate: isRequired
+    }
+  },
+  creator: {
+    required: {
+      field: 'creator' as const,
+      message: 'Project creator is required',
+      validate: isRequired
+    }
+  }
+};
+
+/**
+ * Validate a Project entity
+ */
+export const validateProject = (project: any): ValidationResult => {
+  const rules = [
+    projectValidationRules.title.required,
+    projectValidationRules.title.minLength,
+    projectValidationRules.title.maxLength,
+    projectValidationRules.description.required,
+    projectValidationRules.description.minLength,
+    projectValidationRules.description.maxLength,
+    projectValidationRules.workflowId.required,
+    projectValidationRules.creator.required
+  ];
+
+  return validateWithRules(project, rules);
+};
+
+/**
  * Helper function to convert ValidationResult to form error format
  */
 export const validationResultToFormErrors = (result: ValidationResult): Record<string, string> => {

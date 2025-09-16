@@ -1,16 +1,17 @@
-import type { Status, Workflow, Project, User, Task } from '../types';
+import type { Status, Workflow, Project, User, Task, Design } from '../types';
 import { saveToStorage, loadFromStorage, STORAGE_KEYS, clearAllData } from '../utils/localStorage';
-import { 
-  createMockUsers, 
-  createMockStatuses, 
-  createMockWorkflows, 
+import {
+  createMockUsers,
+  createMockStatuses,
+  createMockWorkflows,
   createMockProjects,
-  createMockTasks // New for Epic 7
+  createMockTasks, // New for Epic 7
+  createMockDesigns // New for designs feature
 } from './mockData';
 
 // Versioned data initialization so we can reseed when structure/content changes
 const DATA_VERSION_KEY = 'pvworkflow_data_version';
-const CURRENT_DATA_VERSION = '3'; // Updated for Epic 7
+const CURRENT_DATA_VERSION = '4'; // Updated for designs feature
 
 // Initialize data if localStorage is empty or version changed
 export const initializeData = (): void => {
@@ -23,8 +24,10 @@ export const initializeData = (): void => {
       saveToStorage(STORAGE_KEYS.USERS, createMockUsers());
       saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
       saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
-      saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+      const projects = createMockProjects();
+      saveToStorage(STORAGE_KEYS.PROJECTS, projects);
       saveToStorage(STORAGE_KEYS.TASKS, createMockTasks()); // New for Epic 7
+      saveToStorage(STORAGE_KEYS.DESIGNS, createMockDesigns(projects)); // New for designs feature
       localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
       console.log('Data reseeded to localStorage (version', CURRENT_DATA_VERSION, ')');
     } else {
@@ -37,8 +40,10 @@ export const initializeData = (): void => {
       saveToStorage(STORAGE_KEYS.USERS, createMockUsers());
       saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
       saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
-      saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+      const projects = createMockProjects();
+      saveToStorage(STORAGE_KEYS.PROJECTS, projects);
       saveToStorage(STORAGE_KEYS.TASKS, createMockTasks()); // New for Epic 7
+      saveToStorage(STORAGE_KEYS.DESIGNS, createMockDesigns(projects)); // New for designs feature
     }
   }
 };
@@ -48,8 +53,10 @@ export const reseedData = (): void => {
   saveToStorage(STORAGE_KEYS.USERS, createMockUsers());
   saveToStorage(STORAGE_KEYS.STATUSES, createMockStatuses());
   saveToStorage(STORAGE_KEYS.WORKFLOWS, createMockWorkflows());
-  saveToStorage(STORAGE_KEYS.PROJECTS, createMockProjects());
+  const projects = createMockProjects();
+  saveToStorage(STORAGE_KEYS.PROJECTS, projects);
   saveToStorage(STORAGE_KEYS.TASKS, createMockTasks()); // New for Epic 7
+  saveToStorage(STORAGE_KEYS.DESIGNS, createMockDesigns(projects)); // New for designs feature
   localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
   console.log('Data manually reseeded');
 };
@@ -323,9 +330,9 @@ export const taskOperations = {
   markIncomplete: (id: string): Task | null => {
     const tasks = loadFromStorage<Task>(STORAGE_KEYS.TASKS);
     const index = tasks.findIndex(task => task.id === id);
-    
+
     if (index === -1) return null;
-    
+
     tasks[index] = {
       ...tasks[index],
       isCompleted: false,
@@ -333,8 +340,111 @@ export const taskOperations = {
       completedBy: undefined,
       updatedAt: new Date()
     };
-    
+
     saveToStorage(STORAGE_KEYS.TASKS, tasks);
     return tasks[index];
+  }
+};
+
+// Design CRUD operations - New for designs feature
+export const designOperations = {
+  getAll: (): Design[] => loadFromStorage<Design>(STORAGE_KEYS.DESIGNS),
+
+  getById: (id: string): Design | undefined => {
+    const designs = loadFromStorage<Design>(STORAGE_KEYS.DESIGNS);
+    return designs.find(design => design.id === id);
+  },
+
+  getByProjectId: (projectId: string): Design[] => {
+    const designs = loadFromStorage<Design>(STORAGE_KEYS.DESIGNS);
+    return designs.filter(design => design.projectId === projectId);
+  },
+
+  getActiveByProjectId: (projectId: string): Design | undefined => {
+    const designs = loadFromStorage<Design>(STORAGE_KEYS.DESIGNS);
+    return designs.find(design => design.projectId === projectId && design.isActive);
+  },
+
+  create: (design: Omit<Design, 'id' | 'createdAt' | 'lastEditedAt'>): Design => {
+    const designs = loadFromStorage<Design>(STORAGE_KEYS.DESIGNS);
+
+    // If this design is being set as active, deactivate other designs for the same project
+    if (design.isActive) {
+      designs.forEach(d => {
+        if (d.projectId === design.projectId && d.isActive) {
+          d.isActive = false;
+        }
+      });
+    }
+
+    const newDesign: Design = {
+      ...design,
+      id: `design-${Date.now()}`,
+      createdAt: new Date(),
+      lastEditedAt: new Date()
+    };
+
+    designs.push(newDesign);
+    saveToStorage(STORAGE_KEYS.DESIGNS, designs);
+    return newDesign;
+  },
+
+  update: (id: string, updates: Partial<Design>): Design | null => {
+    const designs = loadFromStorage<Design>(STORAGE_KEYS.DESIGNS);
+    const index = designs.findIndex(design => design.id === id);
+
+    if (index === -1) return null;
+
+    // If this design is being set as active, deactivate other designs for the same project
+    if (updates.isActive) {
+      const currentProjectId = updates.projectId || designs[index].projectId;
+      designs.forEach(d => {
+        if (d.projectId === currentProjectId && d.isActive && d.id !== id) {
+          d.isActive = false;
+        }
+      });
+    }
+
+    designs[index] = {
+      ...designs[index],
+      ...updates,
+      lastEditedAt: new Date()
+    };
+
+    saveToStorage(STORAGE_KEYS.DESIGNS, designs);
+    return designs[index];
+  },
+
+  delete: (id: string): boolean => {
+    const designs = loadFromStorage<Design>(STORAGE_KEYS.DESIGNS);
+    const filteredDesigns = designs.filter(design => design.id !== id);
+
+    if (filteredDesigns.length === designs.length) return false;
+
+    saveToStorage(STORAGE_KEYS.DESIGNS, filteredDesigns);
+    return true;
+  },
+
+  setActive: (id: string): Design | null => {
+    const designs = loadFromStorage<Design>(STORAGE_KEYS.DESIGNS);
+    const targetIndex = designs.findIndex(design => design.id === id);
+
+    if (targetIndex === -1) return null;
+
+    const targetDesign = designs[targetIndex];
+
+    // Deactivate all other designs for the same project
+    designs.forEach(d => {
+      if (d.projectId === targetDesign.projectId) {
+        d.isActive = false;
+      }
+    });
+
+    // Set target design as active
+    designs[targetIndex].isActive = true;
+    designs[targetIndex].lastEditedAt = new Date();
+
+    saveToStorage(STORAGE_KEYS.DESIGNS, designs);
+    return designs[targetIndex];
   }
 };

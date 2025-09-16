@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import { AppContextProvider } from './context/AppContext';
 import ProjectList from './pages/ProjectList';
+import ProjectDetail from './pages/ProjectDetail';
 import StatusManagement from './pages/StatusManagement';
 import WorkflowManagement from './pages/WorkflowManagement';
 import TaskManagement from './pages/TaskManagement';
@@ -23,6 +24,7 @@ function App() {
             element={<Layout />}
           >
             <Route index element={<ProjectList />} />
+            <Route path="projects/:projectId" element={<ProjectDetail />} />
             <Route path="admin/statuses" element={<StatusManagement />} />
             <Route path="admin/workflows" element={<WorkflowManagement />} />
             <Route path="admin/tasks" element={<TaskManagement />} />

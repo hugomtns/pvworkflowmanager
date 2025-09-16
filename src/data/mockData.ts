@@ -1,4 +1,4 @@
-import type { Status, Workflow, Project, User, Transition, Task } from '../types';
+import type { Status, Workflow, Project, User, Transition, Task, Design } from '../types';
 
 // Generate unique IDs
 // const generateId = (): string => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -454,3 +454,101 @@ export const createMockProjects = (): Project[] => [
     ]
   }
 ];
+
+// Mock Designs - PV layout designs for projects
+export const createMockDesigns = (projects: Project[]): Design[] => {
+  const panelManufacturers = [
+    'SunPower',
+    'Tesla',
+    'LG Solar',
+    'Canadian Solar',
+    'Jinko Solar',
+    'REC Group',
+    'Panasonic',
+    'Q Cells'
+  ];
+
+  const panelModels = [
+    'Maxeon 3 415W',
+    'Solar Roof V3',
+    'NeON H 375W',
+    'HiKu CS3W-405MS',
+    'Tiger Pro 540W',
+    'Alpha Pure 405W',
+    'HIT+ 330W',
+    'Q.PEAK DUO L-G5.2 355W'
+  ];
+
+  const designs: Design[] = [];
+
+  projects.forEach((project, projectIndex) => {
+    // Create 2-4 designs per project
+    const designCount = Math.floor(Math.random() * 3) + 2; // 2-4 designs
+
+    for (let i = 0; i < designCount; i++) {
+      const panelWattage = 350 + Math.floor(Math.random() * 200); // 350-550W panels
+      const panelCount = Math.floor(Math.random() * 50) + 20; // 20-70 panels
+      const dcCapacity = (panelCount * panelWattage) / 1000; // kW DC
+      const dcAcRatio = 1.15 + Math.random() * 0.25; // 1.15-1.40
+      const acCapacity = dcCapacity / dcAcRatio;
+      const specificYield = 1200 + Math.random() * 400; // 1200-1600 kWh/kW/year
+      const annualProduction = dcCapacity * specificYield;
+      const costPerWatt = 2.5 + Math.random() * 1.0; // $2.50-$3.50/W
+      const systemCost = dcCapacity * 1000 * costPerWatt;
+      const roofArea = 1500 + Math.random() * 2000; // 1500-3500 sq ft
+      const moduleArea = panelCount * 22; // ~22 sq ft per module
+      const arrayTilt = Math.floor(Math.random() * 30) + 15; // 15-45 degrees
+      const arrayAzimuth = 150 + Math.floor(Math.random() * 60); // 150-210 degrees
+      const co2OffsetAnnual = annualProduction * 0.92; // ~0.92 lbs CO2/kWh
+
+      const design: Design = {
+        id: `design-${Date.now()}-${projectIndex}-${i}`,
+        projectId: project.id,
+        title: `Design Option ${String.fromCharCode(65 + i)}`, // A, B, C, D
+        description: i === 0
+          ? 'Standard layout design optimized for maximum production'
+          : i === 1
+          ? 'Alternative layout with improved aesthetics'
+          : i === 2
+          ? 'High-efficiency premium panel option'
+          : 'Cost-optimized design with value panels',
+        creator: project.creator,
+        createdAt: new Date(project.createdAt.getTime() + (i * 24 * 60 * 60 * 1000)), // Stagger by days
+        lastEditedAt: new Date(project.lastEditedAt.getTime() + (i * 24 * 60 * 60 * 1000)),
+        systemSpecs: {
+          // Panel specifications
+          panelCount,
+          panelWattage,
+          panelManufacturer: panelManufacturers[Math.floor(Math.random() * panelManufacturers.length)],
+          panelModel: panelModels[Math.floor(Math.random() * panelModels.length)],
+          // System production data
+          dcCapacity: Math.round(dcCapacity * 100) / 100,
+          acCapacity: Math.round(acCapacity * 100) / 100,
+          dcAcRatio: Math.round(dcAcRatio * 100) / 100,
+          // Annual production estimates
+          annualProduction: Math.round(annualProduction),
+          specificYield: Math.round(specificYield),
+          // System layout
+          arrayTilt,
+          arrayAzimuth,
+          roofArea: Math.round(roofArea),
+          moduleArea: Math.round(moduleArea),
+          // Financial estimates
+          systemCost: Math.round(systemCost),
+          costPerWatt: Math.round(costPerWatt * 100) / 100,
+          paybackPeriod: 6 + Math.random() * 4, // 6-10 years
+          // Environmental impact
+          co2OffsetAnnual: Math.round(co2OffsetAnnual)
+        },
+        // Design metadata
+        designVersion: `v1.${i}`,
+        isActive: i === 0, // First design is active by default
+        approvalStatus: i === 0 ? 'approved' : i === 1 ? 'pending' : 'draft'
+      };
+
+      designs.push(design);
+    }
+  });
+
+  return designs;
+};

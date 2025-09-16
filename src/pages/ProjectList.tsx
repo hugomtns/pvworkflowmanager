@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { projectOperations, statusOperations, userOperations } from '../data/dataAccess';
 import type { Project, Status, User } from '../types';
 import StatusChangeModal from '../components/StatusChangeModal';
 import StatusHistory from '../components/StatusHistory';
 import UserTaskList from '../components/UserTaskList';
+import ProjectForm from '../components/ProjectForm';
 import { AppContext } from '../context/AppContext';
 import { formatDate } from '../utils/common';
 
 
 const ProjectList: React.FC = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -17,6 +20,8 @@ const ProjectList: React.FC = () => {
   const [statusModalProject, setStatusModalProject] = useState<Project | undefined>(undefined);
   const [historyProject, setHistoryProject] = useState<Project | undefined>(undefined);
   const [taskModalProject, setTaskModalProject] = useState<Project | undefined>(undefined);
+  const [projectFormOpen, setProjectFormOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<Project | undefined>(undefined);
   const { currentUser, workflows, tasks } = useContext(AppContext);
 
   // Load data when component mounts
@@ -94,6 +99,57 @@ const ProjectList: React.FC = () => {
     setHistoryProject(project);
   }, []);
 
+  // Handle navigating to project details
+  const handleViewProject = useCallback((project: Project) => {
+    navigate(`/projects/${project.id}`);
+  }, [navigate]);
+
+  // Handle creating new project
+  const handleCreateProject = useCallback(() => {
+    setProjectToEdit(undefined);
+    setProjectFormOpen(true);
+  }, []);
+
+  // Handle editing existing project
+  const handleEditProject = useCallback((project: Project) => {
+    setProjectToEdit(project);
+    setProjectFormOpen(true);
+  }, []);
+
+  // Handle saving project (create or update)
+  const handleSaveProject = useCallback((projectData: Omit<Project, 'id' | 'createdAt' | 'lastEditedAt' | 'statusHistory'>) => {
+    if (projectToEdit) {
+      // Update existing project
+      const updated = projectOperations.update(projectToEdit.id, {
+        ...projectData,
+        lastEditedAt: new Date()
+      });
+      if (updated) {
+        setProjects(projectOperations.getAll());
+      }
+    } else {
+      // Create new project
+      const newProject: Omit<Project, 'id'> = {
+        ...projectData,
+        createdAt: new Date(),
+        lastEditedAt: new Date(),
+        statusHistory: []
+      };
+      const created = projectOperations.create(newProject);
+      if (created) {
+        setProjects(projectOperations.getAll());
+      }
+    }
+    setProjectFormOpen(false);
+    setProjectToEdit(undefined);
+  }, [projectToEdit]);
+
+  // Handle closing project form
+  const handleCloseProjectForm = useCallback(() => {
+    setProjectFormOpen(false);
+    setProjectToEdit(undefined);
+  }, []);
+
   return (
     <div>
       <div style={{ 
@@ -103,14 +159,17 @@ const ProjectList: React.FC = () => {
         marginBottom: '2rem'
       }}>
         <h2 style={{ margin: 0 }}>Projects ({filteredProjects.length})</h2>
-        <button style={{
-          backgroundColor: '#1976d2',
-          color: 'white',
-          border: 'none',
-          padding: '0.75rem 1.5rem',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}>
+        <button
+          onClick={handleCreateProject}
+          style={{
+            backgroundColor: '#1976d2',
+            color: 'white',
+            border: 'none',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
           Create New Project
         </button>
       </div>
@@ -230,7 +289,19 @@ const ProjectList: React.FC = () => {
                   <div>
                     <strong>Creator:</strong> {creator?.name || 'Unknown User'}
                   </div>
-                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => handleViewProject(project)}
+                      style={{ backgroundColor: '#1976d2', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '600' }}
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => handleEditProject(project)}
+                      style={{ backgroundColor: '#ff9800', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
+                    >
+                      Edit Project
+                    </button>
                     <button
                       onClick={() => handleStatusModal(project)}
                       style={{ backgroundColor: '#6a1b9a', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
@@ -307,6 +378,14 @@ const ProjectList: React.FC = () => {
         </div>,
         document.body
       )}
+
+      {/* Project form modal */}
+      <ProjectForm
+        project={projectToEdit}
+        isOpen={projectFormOpen}
+        onClose={handleCloseProjectForm}
+        onSave={handleSaveProject}
+      />
     </div>
   );
 };

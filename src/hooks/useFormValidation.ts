@@ -85,15 +85,18 @@ export const useFormValidation = <T extends Record<string, any>>(
   }, [formData, validateData]);
 
   const setFormData = useCallback((data: T | ((prev: T) => T)) => {
-    const newData = typeof data === 'function' ? data(formData) : data;
-    setFormDataState(newData);
+    setFormDataState(prevData => {
+      const newData = typeof data === 'function' ? data(prevData) : data;
 
-    // Validate on change if enabled
-    if (validateOnChange && hasValidated) {
-      const result = validateData(newData);
-      setErrors(result.errors);
-    }
-  }, [formData, validateOnChange, hasValidated, validateData]);
+      // Validate on change if enabled
+      if (validateOnChange && hasValidated) {
+        const result = validateData(newData);
+        setErrors(result.errors);
+      }
+
+      return newData;
+    });
+  }, [validateOnChange, hasValidated, validateData]);
 
   const updateField = useCallback((field: keyof T, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
