@@ -37,14 +37,7 @@ const Layout: React.FC = () => {
           </select>
           <button
             onClick={() => { reseedData(); window.location.reload(); }}
-            style={{
-              backgroundColor: 'white',
-              color: '#1976d2',
-              border: '1px solid #bbdefb',
-              padding: '0.4rem 0.6rem',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
+            className="btn btn-header-action"
           >
             Reset Data
           </button>

@@ -109,8 +109,8 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
             {error}
           </div>
         )}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-          <button onClick={onCancel} style={{ border: '1px solid #ddd', backgroundColor: 'white', padding: '0.5rem 0.75rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+        <div className="btn-group" style={{ justifyContent: 'flex-end' }}>
+          <button onClick={onCancel} className="btn btn-cancel btn-md">Cancel</button>
           <button
             disabled={!selected || !!selected.blockedByTasks}
             onClick={() => {
@@ -127,7 +127,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
               setError(undefined);
               onConfirm(selected.transition);
             }}
-            style={{ backgroundColor: '#9c27b0', color: 'white', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px', cursor: 'pointer', opacity: (!selected || !!selected.blockedByTasks) ? 0.6 : 1 }}
+            className="btn btn-modal-primary btn-md"
           >
             Confirm
           </button>
