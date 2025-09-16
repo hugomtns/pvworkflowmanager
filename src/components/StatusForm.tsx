@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Status } from '../types';
 import { validateStatus } from '../utils/validation';
 import { useEntityFormValidation } from '../hooks/useFormValidation';
@@ -19,11 +19,11 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
 
   const {
     formData,
-    errors,
     validate,
     updateField,
     getFieldClassName,
-    hasFieldError
+    hasFieldError,
+    getFieldError
   } = useEntityFormValidation(initialData, validateStatus);
 
   const availableEntityTypes = ['project', 'campaign', 'design', 'file'];

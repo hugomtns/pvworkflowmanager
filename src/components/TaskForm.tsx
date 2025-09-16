@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Task, User, Transition } from '../types';
 import { validateTask } from '../utils/validation';
 import { useEntityFormValidation } from '../hooks/useFormValidation';
@@ -26,7 +26,6 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, users, transitions, onSave, o
 
   const {
     formData,
-    errors,
     validate,
     updateField,
     getFieldClassName,
