@@ -2,12 +2,8 @@ import React, { useContext } from 'react';
 import type { Project } from '../types';
 import { AppContext } from '../context/AppContext';
 import { taskOperations } from '../data/dataAccess';
-
-const formatDate = (date: Date | string | undefined): string => {
-  if (!date) return '-';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString();
-};
+import { formatDate } from '../utils/common';
+import { getUserName } from '../utils/userHelpers';
 
 const UserTaskList: React.FC<{ project?: Project }> = ({ project }) => {
   const { tasks, currentUser, isAdmin, users, setTasks, workflows } = useContext(AppContext);
@@ -24,7 +20,6 @@ const UserTaskList: React.FC<{ project?: Project }> = ({ project }) => {
     return assignedOk && transitionOk;
   });
 
-  const getUserName = (id: string) => users.find(u => u.id === id)?.name || id;
 
   const handleMarkDone = (taskId: string) => {
     if (!currentUser) return;
@@ -67,8 +62,8 @@ const UserTaskList: React.FC<{ project?: Project }> = ({ project }) => {
             <tr key={task.id} style={{ borderBottom: '1px solid #e3e3e3' }}>
               <td style={{ padding: '0.5rem' }}>{task.name}</td>
               <td style={{ padding: '0.5rem' }}>{task.description}</td>
-              <td style={{ padding: '0.5rem' }}>{task.deadline ? (task.deadline instanceof Date ? task.deadline.toLocaleDateString() : new Date(task.deadline).toLocaleDateString()) : '-'}</td>
-              <td style={{ padding: '0.5rem' }}>{getUserName(task.assignedUserId)}</td>
+              <td style={{ padding: '0.5rem' }}>{formatDate(task.deadline, { fallback: '-' })}</td>
+              <td style={{ padding: '0.5rem' }}>{getUserName(users, task.assignedUserId)}</td>
               <td style={{ padding: '0.5rem' }}>{task.isCompleted ? `Completed ${formatDate(task.completedAt)}` : 'Pending'}</td>
               <td style={{ padding: '0.5rem', textAlign: 'center' }}>
                 {!task.isCompleted ? (

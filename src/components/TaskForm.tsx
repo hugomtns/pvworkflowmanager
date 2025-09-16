@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Task, User, Transition } from '../types';
+import { validateTask, validationResultToFormErrors } from '../utils/validation';
 
 interface TaskFormProps {
   task?: Task | null;
@@ -29,13 +30,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, users, transitions, onSave, o
   }, [task?.id]);
 
   const validate = () => {
-    const errs: { [key: string]: string } = {};
-  if (!form.name) errs.name = 'Name is required';
-  if (!form.description) errs.description = 'Goal is required';
-  if (!form.assignedUserId) errs.assignedUserId = 'Assigned user is required';
-  if (!form.deadline) errs.deadline = 'Deadline is required';
-  if (!form.transitionId) errs.transitionId = 'Transition is required';
-    return errs;
+    const result = validateTask(form);
+    return validationResultToFormErrors(result);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

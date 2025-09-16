@@ -6,6 +6,8 @@ import StatusChangeModal from '../components/StatusChangeModal';
 import StatusHistory from '../components/StatusHistory';
 import UserTaskList from '../components/UserTaskList';
 import { AppContext } from '../context/AppContext';
+import { formatDate } from '../utils/common';
+import { getUserById } from '../utils/userHelpers';
 
 
 const ProjectList: React.FC = () => {
@@ -38,16 +40,10 @@ const ProjectList: React.FC = () => {
   // Helper functions
   const getWorkflowForProject = (project: Project) => workflows.find((wf: any) => wf.id === project.workflowId);
   const getStatusById = (statusId: string) => statuses.find(status => status.id === statusId);
-  const getUserById = (userId: string) => users.find(user => user.id === userId);
   const filteredProjects = projects.filter(project =>
     project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const formatDate = (date: Date | string | undefined): string => {
-    if (!date) return '';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString();
-  };
 
   return (
     <div>
@@ -97,7 +93,7 @@ const ProjectList: React.FC = () => {
         }}>
           {filteredProjects.map(project => {
             const status = getStatusById(project.currentStatusId);
-            const creator = getUserById(project.creator);
+            const creator = getUserById(users, project.creator);
             // workflow intentionally not used here; UserTaskList will compute relevant transitions
             // Compute completed/required counts for compact summary
             const workflow = workflows.find((wf: any) => wf.id === project.workflowId);

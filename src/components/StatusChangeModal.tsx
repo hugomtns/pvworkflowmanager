@@ -3,6 +3,7 @@ import type { Project, Workflow, Status, User, Transition } from '../types';
 import { getValidNextTransitions, describeTransitionRequirements, canUserTransition } from '../utils/transitionRules';
 import type { NextTransitionOption } from '../utils/transitionRules';
 import { AppContext } from '../context/AppContext';
+import { createUserNameMap } from '../utils/userHelpers';
 
 interface StatusChangeModalProps {
   project: Project;
@@ -26,9 +27,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
   const { users } = useContext(AppContext);
 
   const idToUserName = useMemo(() => {
-    const map: Record<string, string> = {};
-    users.forEach(u => { map[u.id] = u.name; });
-    return map;
+    return createUserNameMap(users);
   }, [users]);
 
   const req = selected ? describeTransitionRequirements(selected.transition, idToUserName) : undefined;

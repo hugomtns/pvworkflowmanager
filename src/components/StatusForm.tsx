@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Status } from '../types';
+import { validateStatus, validationResultToFormErrors } from '../utils/validation';
 
 interface StatusFormProps {
   status?: Status; // undefined for create, Status object for edit
@@ -19,28 +20,13 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
 
   const availableEntityTypes = ['project', 'campaign', 'design', 'file'];
 
-  // Validate form data
+  // Validate form data using centralized validation
   const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Status name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Status name must be at least 2 characters';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    }
-
-    if (formData.entityTypes.length === 0) {
-      newErrors.entityTypes = 'At least one entity type must be selected';
-    }
+    const result = validateStatus(formData);
+    const newErrors = validationResultToFormErrors(result);
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return result.isValid;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
