@@ -115,68 +115,45 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
           </div>
 
           {/* Description */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem',
-              fontWeight: 'bold'
-            }}>
-              Description *
+          <div className="form-field">
+            <label className="form-label required">
+              Description
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: errors.description ? '1px solid #f44336' : '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                minHeight: '80px',
-                resize: 'vertical'
-              }}
+              className={`form-textarea ${errors.description ? 'error' : ''}`}
               placeholder="Describe what this status represents..."
             />
             {errors.description && (
-              <div style={{ color: '#f44336', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+              <span className="form-error">
                 {errors.description}
-              </div>
+              </span>
             )}
           </div>
 
           {/* Entity Types */}
-          <div style={{ marginBottom: '2rem' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem',
-              fontWeight: 'bold'
-            }}>
-              Entity Types *
+          <div className="form-field">
+            <label className="form-label required">
+              Entity Types
             </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="form-checkbox-group">
               {availableEntityTypes.map(entityType => (
-                <label
-                  key={entityType}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    cursor: 'pointer'
-                  }}
-                >
+                <label key={entityType} className="form-label checkbox">
                   <input
                     type="checkbox"
                     checked={formData.entityTypes.includes(entityType)}
                     onChange={(e) => handleEntityTypeChange(entityType, e.target.checked)}
+                    className="form-checkbox"
                   />
                   <span style={{ textTransform: 'capitalize' }}>{entityType}</span>
                 </label>
               ))}
             </div>
             {errors.entityTypes && (
-              <div style={{ color: '#f44336', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+              <span className="form-error">
                 {errors.entityTypes}
-              </div>
+              </span>
             )}
           </div>
 

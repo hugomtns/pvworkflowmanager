@@ -6,31 +6,20 @@ import { AppContext } from '../context/AppContext';
 const Layout: React.FC = () => {
   const { userRole, setUserRole } = useContext(AppContext);
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
+    <div className="app-layout">
       {/* Header */}
-      <header style={{
-        backgroundColor: '#1976d2',
-        color: 'white',
-        padding: '1rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>
+      <header className="app-header">
+        <h1 className="app-title">
           PV Workflow Manager
         </h1>
-        
+
         {/* Role Switcher */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="app-header-controls">
           <span>Role:</span>
-          <select 
-            value={userRole} 
+          <select
+            value={userRole}
             onChange={(e) => setUserRole(e.target.value as 'admin' | 'user')}
-            style={{
-              padding: '0.5rem',
-              borderRadius: '4px',
-              border: 'none'
-            }}
+            className="app-header-select"
           >
             <option value="user">User</option>
             <option value="admin">Admin</option>
@@ -45,53 +34,21 @@ const Layout: React.FC = () => {
       </header>
 
       {/* Navigation */}
-      <nav style={{
-        backgroundColor: '#f5f5f5',
-        padding: '0.5rem 1rem',
-        borderBottom: '1px solid #ddd'
-      }}>
-        <div style={{ display: 'flex', gap: '2rem' }}>
-          <Link 
-            to="/" 
-            style={{ 
-              textDecoration: 'none', 
-              color: '#1976d2',
-              fontWeight: 'bold'
-            }}
-          >
+      <nav className="app-nav">
+        <div className="app-nav-links">
+          <Link to="/" className="app-nav-link">
             Projects
           </Link>
-          
+
           {userRole === 'admin' && (
             <>
-              <Link 
-                to="/admin/statuses" 
-                style={{ 
-                  textDecoration: 'none', 
-                  color: '#1976d2',
-                  fontWeight: 'bold'
-                }}
-              >
+              <Link to="/admin/statuses" className="app-nav-link">
                 Manage Statuses
               </Link>
-              <Link 
-                to="/admin/workflows" 
-                style={{ 
-                  textDecoration: 'none', 
-                  color: '#1976d2',
-                  fontWeight: 'bold'
-                }}
-              >
+              <Link to="/admin/workflows" className="app-nav-link">
                 Manage Workflows
               </Link>
-              <Link 
-                to="/admin/tasks" 
-                style={{ 
-                  textDecoration: 'none', 
-                  color: '#1976d2',
-                  fontWeight: 'bold'
-                }}
-              >
+              <Link to="/admin/tasks" className="app-nav-link">
                 Task Management
               </Link>
             </>
@@ -100,13 +57,7 @@ const Layout: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main style={{ 
-        padding: '2rem',
-        flex: 1,
-        width: '100%',
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
+      <main className="app-main">
         <Outlet />
       </main>
     </div>

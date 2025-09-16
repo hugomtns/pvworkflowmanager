@@ -53,48 +53,71 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, users, transitions, onSave, o
   };
 
   return (
-    <form onSubmit={handleSubmit} className="task-form">
-      <h2>{task ? 'Edit Task' : 'New Task'}</h2>
-      <label>
-        Name
-        <input value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-        {errors.name && <span className="error">{errors.name}</span>}
-      </label>
-      <label>
-        Goal
-        <input value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-        {errors.description && <span className="error">{errors.description}</span>}
-      </label>
-      <label>
-        Assigned User
-        <select value={form.assignedUserId || ''} onChange={e => setForm(f => ({ ...f, assignedUserId: e.target.value }))}>
+    <form onSubmit={handleSubmit} className="task-form form">
+      <h2 className="modal-title">{task ? 'Edit Task' : 'New Task'}</h2>
+
+      <div className="form-field">
+        <label className="form-label required">Name</label>
+        <input
+          value={form.name || ''}
+          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          className={`form-input ${errors.name ? 'error' : ''}`}
+        />
+        {errors.name && <span className="form-error">{errors.name}</span>}
+      </div>
+
+      <div className="form-field">
+        <label className="form-label required">Goal</label>
+        <input
+          value={form.description || ''}
+          onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+          className={`form-input ${errors.description ? 'error' : ''}`}
+        />
+        {errors.description && <span className="form-error">{errors.description}</span>}
+      </div>
+
+      <div className="form-field">
+        <label className="form-label required">Assigned User</label>
+        <select
+          value={form.assignedUserId || ''}
+          onChange={e => setForm(f => ({ ...f, assignedUserId: e.target.value }))}
+          className={`form-select ${errors.assignedUserId ? 'error' : ''}`}
+        >
           <option value="">Select user</option>
           {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
-        {errors.assignedUserId && <span className="error">{errors.assignedUserId}</span>}
-      </label>
-      <label>
-        Deadline
+        {errors.assignedUserId && <span className="form-error">{errors.assignedUserId}</span>}
+      </div>
+
+      <div className="form-field">
+        <label className="form-label required">Deadline</label>
         <input
           type="date"
           value={form.deadline ? (form.deadline instanceof Date ? form.deadline.toISOString().substring(0, 10) : form.deadline) : ''}
           onChange={e => setForm(f => ({ ...f, deadline: e.target.value ? new Date(e.target.value) : undefined }))}
+          className={`form-date ${errors.deadline ? 'error' : ''}`}
         />
-        {errors.deadline && <span className="error">{errors.deadline}</span>}
-      </label>
-      <label>
-        Transition
-        <select value={form.transitionId || ''} onChange={e => setForm(f => ({ ...f, transitionId: e.target.value }))}>
+        {errors.deadline && <span className="form-error">{errors.deadline}</span>}
+      </div>
+
+      <div className="form-field">
+        <label className="form-label required">Transition</label>
+        <select
+          value={form.transitionId || ''}
+          onChange={e => setForm(f => ({ ...f, transitionId: e.target.value }))}
+          className={`form-select ${errors.transitionId ? 'error' : ''}`}
+        >
           <option value="">Select transition</option>
           {transitions.map(tr => (
             <option key={tr.id} value={tr.id}>{tr.id}</option>
           ))}
         </select>
-        {errors.transitionId && <span className="error">{errors.transitionId}</span>}
-      </label>
-      <div className="actions">
-        <button type="submit">{task ? 'Update' : 'Create'}</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        {errors.transitionId && <span className="form-error">{errors.transitionId}</span>}
+      </div>
+
+      <div className="form-actions">
+        <button type="button" onClick={onCancel} className="btn btn-cancel btn-md">Cancel</button>
+        <button type="submit" className="btn btn-primary btn-md">{task ? 'Update' : 'Create'}</button>
       </div>
     </form>
   );

@@ -2,6 +2,7 @@
 @import './styles/buttons.css';
 @import './styles/modals.css';
 @import './styles/forms.css';
+@import './styles/layout.css';
 
 * {
   margin: 0;
