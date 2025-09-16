@@ -29,10 +29,6 @@
   font-size: var(--font-base);
 }
 
-.form-label.required::after {
-  content: ' *';
-  color: var(--error-red);
-}
 
 .form-label.inline {
   display: flex;

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { Workflow, Status, Transition, User } from '../types';
 import { userOperations } from '../data/dataAccess';
+import { validateTransition } from '../utils/validation';
+import { useEntityFormValidation } from '../hooks/useFormValidation';
 
 interface TransitionFormProps {
   workflow: Workflow;
@@ -11,12 +13,26 @@ interface TransitionFormProps {
 }
 
 const TransitionForm: React.FC<TransitionFormProps> = ({ workflow, allStatuses, initial, onCancel, onSave }) => {
-  const [fromStatusId, setFromStatusId] = useState<string>(initial?.fromStatusId || '');
-  const [toStatusId, setToStatusId] = useState<string>(initial?.toStatusId || '');
-  const [requiresApproval, setRequiresApproval] = useState<boolean>(initial?.requiresApproval || false);
-  const [approverRoles, setApproverRoles] = useState<string[]>(initial?.approverRoles || []);
-  const [approverUserIds, setApproverUserIds] = useState<string[]>(initial?.approverUserIds || []);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const initialData = {
+    fromStatusId: initial?.fromStatusId || '',
+    toStatusId: initial?.toStatusId || '',
+    requiresApproval: initial?.requiresApproval || false,
+    approverRoles: initial?.approverRoles || [],
+    approverUserIds: initial?.approverUserIds || [],
+    id: initial?.id || `trans-${Date.now()}`,
+    tasks: initial?.tasks || [],
+    conditions: initial?.conditions || []
+  };
+
+  const {
+    formData,
+    errors,
+    validate,
+    updateField,
+    getFieldClassName,
+    hasFieldError,
+    getFieldError
+  } = useEntityFormValidation(initialData, validateTransition);
 
   const workflowStatuses = useMemo(() => {
     const set = new Set(workflow.statuses);
@@ -27,123 +43,118 @@ const TransitionForm: React.FC<TransitionFormProps> = ({ workflow, allStatuses, 
   const roleOptions = ['admin', 'user'];
 
   useEffect(() => {
-    if (!fromStatusId && workflowStatuses.length > 0) {
-      setFromStatusId(workflowStatuses[0].id);
+    if (!formData.fromStatusId && workflowStatuses.length > 0) {
+      updateField('fromStatusId', workflowStatuses[0].id);
     }
-    if (!toStatusId && workflowStatuses.length > 1) {
-      setToStatusId(workflowStatuses[1].id);
+    if (!formData.toStatusId && workflowStatuses.length > 1) {
+      updateField('toStatusId', workflowStatuses[1].id);
     }
-  }, [workflowStatuses, fromStatusId, toStatusId]);
-
-  const validate = (): boolean => {
-    const next: Record<string, string> = {};
-    if (!fromStatusId) next.from = 'Select a from status';
-    if (!toStatusId) next.to = 'Select a to status';
-    if (fromStatusId && toStatusId && fromStatusId === toStatusId) next.same = 'From and To cannot be the same';
-    if (requiresApproval && approverRoles.length === 0 && approverUserIds.length === 0) {
-      next.approvers = 'Select at least one role or user';
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
+  }, [workflowStatuses, formData.fromStatusId, formData.toStatusId, updateField]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    const trans: Transition = {
-      id: initial?.id || `trans-${Date.now()}`,
-      fromStatusId,
-      toStatusId,
-      requiresApproval,
-      approverRoles,
-      approverUserIds,
-      tasks: initial?.tasks || [],
-      conditions: initial?.conditions || []
-    };
-    onSave(trans);
+    if (validate()) {
+      const trans: Transition = {
+        id: formData.id,
+        fromStatusId: formData.fromStatusId,
+        toStatusId: formData.toStatusId,
+        requiresApproval: formData.requiresApproval,
+        approverRoles: formData.approverRoles,
+        approverUserIds: formData.approverUserIds,
+        tasks: formData.tasks,
+        conditions: formData.conditions
+      };
+      onSave(trans);
+    }
   };
 
-  const toggleInArray = (arr: string[], value: string, setter: (v: string[]) => void) => {
-    if (arr.includes(value)) setter(arr.filter(v => v !== value));
-    else setter([...arr, value]);
+  const toggleInArray = (fieldName: keyof typeof formData, value: string) => {
+    const arr = formData[fieldName] as string[];
+    if (arr.includes(value)) {
+      updateField(fieldName, arr.filter(v => v !== value));
+    } else {
+      updateField(fieldName, [...arr, value]);
+    }
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1100
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '1.5rem',
-        width: '90%',
-        maxWidth: '700px',
-        maxHeight: '85vh',
-        overflow: 'auto'
-      }}>
-        <h3 style={{ margin: 0, marginBottom: '1rem' }}>{initial ? 'Edit Transition' : 'Add Transition'}</h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>From</label>
-              <select value={fromStatusId} onChange={(e) => setFromStatusId(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+    <div className="modal-overlay">
+      <div className="modal-container modal-form">
+        <h3 className="modal-title">{initial ? 'Edit Transition' : 'Add Transition'}</h3>
+        <form onSubmit={handleSubmit} className="form">
+          <div className="form-row">
+            <div className="form-field">
+              <label className="form-label required">From Status</label>
+              <select
+                value={formData.fromStatusId}
+                onChange={(e) => updateField('fromStatusId', e.target.value)}
+                className={getFieldClassName('form-select', 'fromStatusId')}
+              >
                 {workflowStatuses.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
+              {hasFieldError('fromStatusId') && (
+                <span className="form-error">{getFieldError('fromStatusId')}</span>
+              )}
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>To</label>
-              <select value={toStatusId} onChange={(e) => setToStatusId(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+            <div className="form-field">
+              <label className="form-label required">To Status</label>
+              <select
+                value={formData.toStatusId}
+                onChange={(e) => updateField('toStatusId', e.target.value)}
+                className={getFieldClassName('form-select', 'toStatusId')}
+              >
                 {workflowStatuses.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
+              {hasFieldError('toStatusId') && (
+                <span className="form-error">{getFieldError('toStatusId')}</span>
+              )}
             </div>
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={requiresApproval} onChange={(e) => setRequiresApproval(e.target.checked)} />
-              <span style={{ fontWeight: 'bold' }}>Requires approval</span>
+          <div className="form-field">
+            <label className="form-label checkbox">
+              <input
+                type="checkbox"
+                checked={formData.requiresApproval}
+                onChange={(e) => updateField('requiresApproval', e.target.checked)}
+                className="form-checkbox"
+              />
+              <span>Requires approval</span>
             </label>
           </div>
 
-          {requiresApproval && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-              <div>
-                <div style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Approver roles</div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {formData.requiresApproval && (
+            <div className="form-row">
+              <div className="form-field">
+                <label className="form-label">Approver Roles</label>
+                <div className="form-checkbox-group">
                   {roleOptions.map(role => (
-                    <label key={role} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', border: '1px solid #ddd', borderRadius: '4px', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
+                    <label key={role} className="form-label checkbox">
                       <input
                         type="checkbox"
-                        checked={approverRoles.includes(role)}
-                        onChange={() => toggleInArray(approverRoles, role, setApproverRoles)}
+                        checked={formData.approverRoles.includes(role)}
+                        onChange={() => toggleInArray('approverRoles', role)}
+                        className="form-checkbox"
                       />
-                      <span>{role}</span>
+                      <span style={{ textTransform: 'capitalize' }}>{role}</span>
                     </label>
                   ))}
                 </div>
               </div>
-              <div>
-                <div style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Approver users</div>
-                <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '0.5rem', maxHeight: '150px', overflow: 'auto' }}>
+              <div className="form-field">
+                <label className="form-label">Approver Users</label>
+                <div className="form-checkbox-scroll">
                   {users.map(u => (
-                    <label key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', cursor: 'pointer' }}>
+                    <label key={u.id} className="form-label checkbox">
                       <input
                         type="checkbox"
-                        checked={approverUserIds.includes(u.id)}
-                        onChange={() => toggleInArray(approverUserIds, u.id, setApproverUserIds)}
+                        checked={formData.approverUserIds.includes(u.id)}
+                        onChange={() => toggleInArray('approverUserIds', u.id)}
+                        className="form-checkbox"
                       />
                       <span>{u.name} ({u.role})</span>
                     </label>
@@ -154,14 +165,18 @@ const TransitionForm: React.FC<TransitionFormProps> = ({ workflow, allStatuses, 
           )}
 
           {Object.keys(errors).length > 0 && (
-            <div style={{ color: '#d32f2f', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+            <div className="form-errors">
               {Object.values(errors).join(' · ')}
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-            <button type="button" onClick={onCancel} style={{ border: '1px solid #ddd', backgroundColor: 'white', padding: '0.5rem 0.75rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-            <button type="submit" style={{ backgroundColor: '#9c27b0', color: 'white', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '4px', cursor: 'pointer' }}>{initial ? 'Save' : 'Add'}</button>
+          <div className="form-actions">
+            <button type="button" onClick={onCancel} className="btn btn-cancel btn-lg">
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary btn-lg">
+              {initial ? 'Save Transition' : 'Add Transition'}
+            </button>
           </div>
         </form>
       </div>

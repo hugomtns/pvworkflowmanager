@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Status } from '../types';
-import { validateStatus, validationResultToFormErrors } from '../utils/validation';
+import { validateStatus } from '../utils/validation';
+import { useEntityFormValidation } from '../hooks/useFormValidation';
 
 interface StatusFormProps {
   status?: Status; // undefined for create, Status object for edit
@@ -9,45 +10,37 @@ interface StatusFormProps {
 }
 
 const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({
+  const initialData = {
     name: status?.name || '',
     color: status?.color || '#2196f3',
     description: status?.description || '',
     entityTypes: status?.entityTypes || ['project']
-  });
+  };
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const {
+    formData,
+    errors,
+    validate,
+    updateField,
+    getFieldClassName,
+    hasFieldError
+  } = useEntityFormValidation(initialData, validateStatus);
 
   const availableEntityTypes = ['project', 'campaign', 'design', 'file'];
 
-  // Validate form data using centralized validation
-  const validateForm = (): boolean => {
-    const result = validateStatus(formData);
-    const newErrors = validationResultToFormErrors(result);
-
-    setErrors(newErrors);
-    return result.isValid;
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (validateForm()) {
+
+    if (validate()) {
       onSave(formData);
     }
   };
 
   const handleEntityTypeChange = (entityType: string, checked: boolean) => {
     if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        entityTypes: [...prev.entityTypes, entityType]
-      }));
+      updateField('entityTypes', [...formData.entityTypes, entityType]);
     } else {
-      setFormData(prev => ({
-        ...prev,
-        entityTypes: prev.entityTypes.filter(type => type !== entityType)
-      }));
+      updateField('entityTypes', formData.entityTypes.filter(type => type !== entityType));
     }
   };
 
@@ -67,13 +60,13 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className={`form-input ${errors.name ? 'error' : ''}`}
+              onChange={(e) => updateField('name', e.target.value)}
+              className={getFieldClassName('form-input', 'name')}
               placeholder="e.g., In Progress, Under Review"
             />
-            {errors.name && (
+            {hasFieldError('name') && (
               <span className="form-error">
-                {errors.name}
+                {getFieldError('name')}
               </span>
             )}
           </div>
@@ -87,7 +80,7 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
               <input
                 type="color"
                 value={formData.color}
-                onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                onChange={(e) => updateField('color', e.target.value)}
                 className="form-color"
               />
               <div
@@ -107,13 +100,13 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className={`form-textarea ${errors.description ? 'error' : ''}`}
+              onChange={(e) => updateField('description', e.target.value)}
+              className={getFieldClassName('form-textarea', 'description')}
               placeholder="Describe what this status represents..."
             />
-            {errors.description && (
+            {hasFieldError('description') && (
               <span className="form-error">
-                {errors.description}
+                {getFieldError('description')}
               </span>
             )}
           </div>
@@ -136,9 +129,9 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
                 </label>
               ))}
             </div>
-            {errors.entityTypes && (
+            {hasFieldError('entityTypes') && (
               <span className="form-error">
-                {errors.entityTypes}
+                {getFieldError('entityTypes')}
               </span>
             )}
           </div>
