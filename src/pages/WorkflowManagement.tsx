@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { workflowOperations, statusOperations, projectOperations } from '../data/dataAccess';
 import WorkflowForm from '../components/WorkflowForm';
 import TransitionList from '../components/TransitionList';
+import ActionMenu, { type ActionMenuOption } from '../components/ActionMenu';
 import type { Workflow, Status } from '../types';
 
 const WorkflowManagement: React.FC = () => {
@@ -108,6 +109,29 @@ const WorkflowManagement: React.FC = () => {
     setEditingWorkflow(undefined);
   };
 
+  // Create action menu options for each workflow
+  const createWorkflowActionMenu = useCallback((workflow: Workflow): ActionMenuOption[] => [
+    {
+      label: 'Edit Workflow',
+      icon: '✏️',
+      onClick: () => handleEditWorkflow(workflow)
+    },
+    {
+      label: 'Manage Transitions',
+      icon: '🔄',
+      onClick: () => {
+        const latest = workflowOperations.getById(workflow.id);
+        setTransitionsWorkflow(latest || workflow);
+      }
+    },
+    {
+      label: 'Delete Workflow',
+      icon: '🗑️',
+      color: '#f44336',
+      onClick: () => handleDeleteWorkflow(workflow.id)
+    }
+  ], []);
+
   return (
     <div>
       <div style={{ 
@@ -173,130 +197,89 @@ const WorkflowManagement: React.FC = () => {
                 border: '1px solid #ddd',
                 borderRadius: '8px',
                 padding: '1.5rem',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                textAlign: 'left',
+                transition: 'box-shadow 0.2s',
+                position: 'relative'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
               }}
             >
-              {/* Workflow Header */}
+              {/* Action Menu */}
               <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '1rem'
+                position: 'absolute',
+                top: '12px',
+                right: '12px'
               }}>
-                <div>
-                  <h3 style={{ 
-                    margin: '0 0 0.5rem 0',
-                    color: '#333',
-                    fontSize: '1.25rem'
-                  }}>
-                    {workflow.name}
-                    {workflow.isDefault && (
-                      <span style={{
-                        marginLeft: '0.5rem',
-                        backgroundColor: '#4caf50',
-                        color: 'white',
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.7rem',
-                        fontWeight: 'normal'
-                      }}>
-                        DEFAULT
-                      </span>
-                    )}
-                  </h3>
-                  <p style={{ 
-                    margin: 0,
-                    color: '#666',
-                    fontSize: '0.9rem'
-                  }}>
-                    {workflow.description}
-                  </p>
-                </div>
-                
-                {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    onClick={() => handleEditWorkflow(workflow)}
-                    style={{
-                      backgroundColor: '#2196f3',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '3px',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button style={{
-                    backgroundColor: '#ff9800',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '3px',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer'
-                  }}>
-                    Canvas
-                  </button>
-                  <button 
-                    onClick={() => {
-                      const latest = workflowOperations.getById(workflow.id);
-                      setTransitionsWorkflow(latest || workflow);
-                    }}
-                    style={{
-                      backgroundColor: '#6a1b9a',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '3px',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Transitions
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteWorkflow(workflow.id)}
-                    style={{
-                      backgroundColor: '#f44336',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '3px',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
+                <ActionMenu
+                  options={createWorkflowActionMenu(workflow)}
+                  buttonStyle={{
+                    fontSize: '18px',
+                    padding: '6px 10px'
+                  }}
+                />
               </div>
 
-              {/* Entity Type and Status Count */}
-              <div style={{
-                display: 'flex',
-                gap: '1rem',
-                marginBottom: '1rem'
+              {/* Workflow Title */}
+              <h3 style={{
+                margin: '0 0 0.5rem 0',
+                color: '#333',
+                fontSize: '1.25rem',
+                paddingRight: '40px' // Add padding to avoid overlap with action menu
               }}>
-                <div>
-                  <span style={{ 
-                    backgroundColor: '#e3f2fd',
-                    color: '#1976d2',
+                {workflow.name}
+                {workflow.isDefault && (
+                  <span style={{
+                    marginLeft: '0.75rem',
+                    backgroundColor: '#4caf50',
+                    color: 'white',
                     padding: '0.25rem 0.5rem',
                     borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    textTransform: 'capitalize'
+                    fontSize: '0.7rem',
+                    fontWeight: '600'
                   }}>
-                    {workflow.entityType}
+                    DEFAULT
                   </span>
-                </div>
+                )}
+              </h3>
+
+              {/* Workflow Description */}
+              <p style={{
+                margin: '0 0 1rem 0',
+                color: '#666',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                {workflow.description}
+              </p>
+
+              {/* Entity Type Badge */}
+              <div style={{
+                display: 'inline-block',
+                backgroundColor: '#e3f2fd',
+                color: '#1976d2',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '12px',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                textTransform: 'capitalize',
+                marginBottom: '1rem'
+              }}>
+                {workflow.entityType} Workflow
+              </div>
+
+              {/* Workflow Stats */}
+              <div style={{ margin: '0.6rem 0' }}>
                 <div style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
+                  fontSize: '0.9rem',
+                  color: '#333',
+                  fontWeight: '600'
                 }}>
-                  <strong>{workflow.statuses.length}</strong> statuses
+                  <strong>{workflow.statuses.length}</strong> statuses • <strong>{workflow.transitions.length}</strong> transitions
                 </div>
               </div>
 
@@ -305,17 +288,18 @@ const WorkflowManagement: React.FC = () => {
                 <div style={{
                   fontSize: '0.8rem',
                   color: '#888',
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.5rem',
+                  fontWeight: '600'
                 }}>
-                  <strong>Status Flow:</strong>
+                  Status Flow:
                 </div>
                 <div style={{
                   fontSize: '0.8rem',
                   color: '#555',
-                  fontFamily: 'monospace',
-                  backgroundColor: '#f5f5f5',
-                  padding: '0.5rem',
-                  borderRadius: '4px',
+                  backgroundColor: '#f8f9fa',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid #e9ecef',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap'
@@ -325,7 +309,7 @@ const WorkflowManagement: React.FC = () => {
               </div>
 
               {/* Workflow Metadata */}
-              <div style={{ 
+              <div style={{
                 fontSize: '0.8rem',
                 color: '#888',
                 borderTop: '1px solid #eee',
