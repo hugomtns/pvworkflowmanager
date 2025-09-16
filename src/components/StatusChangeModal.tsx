@@ -14,7 +14,7 @@ interface StatusChangeModalProps {
   onConfirm: (transition: Transition) => void;
 }
 
-const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow, statuses, currentUser, onCancel, onConfirm }) => {
+const StatusChangeModal: React.FC<StatusChangeModalProps> = React.memo(({ project, workflow, statuses, currentUser, onCancel, onConfirm }) => {
   const options: NextTransitionOption[] = useMemo(() => {
     return getValidNextTransitions(workflow, project.currentStatusId, statuses);
   }, [workflow, project.currentStatusId, statuses]);
@@ -129,7 +129,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
       </div>
     </div>
   );
-};
+});
 
 export default StatusChangeModal;
 

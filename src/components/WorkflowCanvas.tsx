@@ -27,7 +27,7 @@ interface WorkflowCanvasProps {
   initialConnections?: Array<{ id: string; fromStatusId: string; toStatusId: string; requiresApproval?: boolean }>;
 }
 
-const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({ 
+const WorkflowCanvas: React.FC<WorkflowCanvasProps> = React.memo(({ 
   statuses, 
   width = 800, 
   height = 600,
@@ -375,7 +375,7 @@ const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
       </Stage>
     </div>
   );
-};
+});
 
 // Individual Status Node Component
 interface StatusNodeComponentProps {
@@ -390,7 +390,7 @@ interface StatusNodeComponentProps {
   setIsDraggingNode: (dragging: boolean) => void;
 }
 
-const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({
+const StatusNodeComponent: React.FC<StatusNodeComponentProps> = React.memo(({
   node,
   nodeWidth,
   nodeHeight,
@@ -523,6 +523,6 @@ const StatusNodeComponent: React.FC<StatusNodeComponentProps> = ({
       />
     </Group>
   );
-};
+});
 
 export default WorkflowCanvas;

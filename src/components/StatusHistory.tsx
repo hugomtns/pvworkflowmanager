@@ -8,7 +8,7 @@ interface StatusHistoryProps {
   onClose: () => void;
 }
 
-const StatusHistory: React.FC<StatusHistoryProps> = ({ project, statuses, users, onClose }) => {
+const StatusHistory: React.FC<StatusHistoryProps> = React.memo(({ project, statuses, users, onClose }) => {
   const idToStatus: Record<string, Status> = React.useMemo(() => {
     const map: Record<string, Status> = {};
     statuses.forEach(s => { map[s.id] = s; });
@@ -62,7 +62,7 @@ const StatusHistory: React.FC<StatusHistoryProps> = ({ project, statuses, users,
       </div>
     </div>
   );
-};
+});
 
 export default StatusHistory;
 

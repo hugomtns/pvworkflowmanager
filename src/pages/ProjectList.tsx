@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { projectOperations, statusOperations, userOperations } from '../data/dataAccess';
 import type { Project, Status, User } from '../types';
@@ -7,7 +7,6 @@ import StatusHistory from '../components/StatusHistory';
 import UserTaskList from '../components/UserTaskList';
 import { AppContext } from '../context/AppContext';
 import { formatDate } from '../utils/common';
-import { getUserById } from '../utils/userHelpers';
 
 
 const ProjectList: React.FC = () => {
@@ -37,13 +36,63 @@ const ProjectList: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [taskModalProject]);
 
-  // Helper functions
-  const getWorkflowForProject = (project: Project) => workflows.find((wf: any) => wf.id === project.workflowId);
-  const getStatusById = (statusId: string) => statuses.find(status => status.id === statusId);
-  const filteredProjects = projects.filter(project =>
-    project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoized helper functions
+  const getWorkflowForProject = useCallback((project: Project) =>
+    workflows.find((wf: any) => wf.id === project.workflowId), [workflows]);
+
+  const statusMap = useMemo(() => {
+    const map = new Map<string, Status>();
+    statuses.forEach(status => map.set(status.id, status));
+    return map;
+  }, [statuses]);
+
+  const userMap = useMemo(() => {
+    const map = new Map<string, User>();
+    users.forEach(user => map.set(user.id, user));
+    return map;
+  }, [users]);
+
+  const filteredProjects = useMemo(() => {
+    if (!searchTerm) return projects;
+    const searchLower = searchTerm.toLowerCase();
+    return projects.filter(project =>
+      project.title.toLowerCase().includes(searchLower) ||
+      project.description.toLowerCase().includes(searchLower)
+    );
+  }, [projects, searchTerm]);
+
+  // Memoize project task calculations to avoid heavy computation on every render
+  const projectTaskData = useMemo(() => {
+    const dataMap = new Map<string, { requiredCount: number; completedCount: number }>();
+
+    filteredProjects.forEach(project => {
+      const workflow = workflows.find((wf: any) => wf.id === project.workflowId);
+      const possibleTransitions = workflow
+        ? workflow.transitions.filter((tr: any) => tr.fromStatusId === project.currentStatusId)
+        : [];
+      const relevantTransitionIds = possibleTransitions.map((t: any) => t.id);
+      const projectTasks = tasks.filter((task: any) => relevantTransitionIds.includes(task.transitionId));
+      const requiredCount = projectTasks.filter((t: any) => t.isRequired).length || projectTasks.length;
+      const completedCount = projectTasks.filter((t: any) => t.isCompleted).length;
+
+      dataMap.set(project.id, { requiredCount, completedCount });
+    });
+
+    return dataMap;
+  }, [filteredProjects, workflows, tasks]);
+
+  // Memoized event handlers
+  const handleTaskModal = useCallback((project: Project) => {
+    setTaskModalProject(project);
+  }, []);
+
+  const handleStatusModal = useCallback((project: Project) => {
+    setStatusModalProject(project);
+  }, []);
+
+  const handleHistoryModal = useCallback((project: Project) => {
+    setHistoryProject(project);
+  }, []);
 
   return (
     <div>
@@ -92,16 +141,10 @@ const ProjectList: React.FC = () => {
           gap: '1.5rem'
         }}>
           {filteredProjects.map(project => {
-            const status = getStatusById(project.currentStatusId);
-            const creator = getUserById(users, project.creator);
-            // workflow intentionally not used here; UserTaskList will compute relevant transitions
-            // Compute completed/required counts for compact summary
-            const workflow = workflows.find((wf: any) => wf.id === project.workflowId);
-            const possibleTransitions = workflow ? workflow.transitions.filter((tr: any) => tr.fromStatusId === project.currentStatusId) : [];
-            const relevantTransitionIds = possibleTransitions.map((t: any) => t.id);
-            const projectTasks = tasks.filter((task: any) => relevantTransitionIds.includes(task.transitionId));
-            const requiredCount = projectTasks.filter((t: any) => t.isRequired).length || projectTasks.length;
-            const completedCount = projectTasks.filter((t: any) => t.isCompleted).length;
+            const status = statusMap.get(project.currentStatusId);
+            const creator = userMap.get(project.creator);
+            const taskData = projectTaskData.get(project.id) || { requiredCount: 0, completedCount: 0 };
+            const { requiredCount, completedCount } = taskData;
 
             return (
               <div
@@ -162,7 +205,7 @@ const ProjectList: React.FC = () => {
                     const summaryColor = !hasTasks ? '#1976d2' : allDone ? '#388e3c' : '#d32f2f';
                     return (
                       <button
-                        onClick={() => setTaskModalProject(project)}
+                        onClick={() => handleTaskModal(project)}
                         style={{ background: 'transparent', border: 'none', color: summaryColor, cursor: 'pointer', fontWeight: 700 }}
                       >
                         Completed tasks: {completedCount}/{requiredCount}
@@ -189,13 +232,13 @@ const ProjectList: React.FC = () => {
                   </div>
                   <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
                     <button
-                      onClick={() => setStatusModalProject(project)}
+                      onClick={() => handleStatusModal(project)}
                       style={{ backgroundColor: '#6a1b9a', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
                     >
                       Change Status
                     </button>
                     <button
-                      onClick={() => setHistoryProject(project)}
+                      onClick={() => handleHistoryModal(project)}
                       style={{ backgroundColor: '#2196f3', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
                     >
                       View History

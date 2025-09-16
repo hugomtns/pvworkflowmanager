@@ -1,27 +1,35 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo, useCallback } from 'react';
 import type { Project } from '../types';
 import { AppContext } from '../context/AppContext';
 import { taskOperations } from '../data/dataAccess';
 import { formatDate } from '../utils/common';
 import { getUserName } from '../utils/userHelpers';
 
-const UserTaskList: React.FC<{ project?: Project }> = ({ project }) => {
+const UserTaskList: React.FC<{ project?: Project }> = React.memo(({ project }) => {
   const { tasks, currentUser, isAdmin, users, setTasks, workflows } = useContext(AppContext);
 
-  // Determine relevant transitions for the project (if provided)
-  const workflow = project ? workflows.find(wf => wf.id === project.workflowId) as any : undefined;
-  const possibleTransitions = workflow ? workflow.transitions.filter((tr: any) => tr.fromStatusId === project!.currentStatusId) : [];
-  const relevantTransitionIds = possibleTransitions.map((t: any) => t.id);
+  // Memoize workflow lookup
+  const workflow = useMemo(() => {
+    return project ? workflows.find(wf => wf.id === project.workflowId) as any : undefined;
+  }, [project, workflows]);
 
-  // Filter tasks: assigned to current user or admin; if project provided, only tasks for that project's next transitions
-  const visibleTasks = tasks.filter((task: any) => {
-    const assignedOk = task.assignedUserId === currentUser.id || isAdmin;
-    const transitionOk = project ? relevantTransitionIds.includes(task.transitionId) : true;
-    return assignedOk && transitionOk;
-  });
+  // Memoize relevant transition IDs
+  const relevantTransitionIds = useMemo(() => {
+    const possibleTransitions = workflow ? workflow.transitions.filter((tr: any) => tr.fromStatusId === project!.currentStatusId) : [];
+    return possibleTransitions.map((t: any) => t.id);
+  }, [workflow, project]);
+
+  // Memoize filtered tasks for performance
+  const visibleTasks = useMemo(() => {
+    return tasks.filter((task: any) => {
+      const assignedOk = task.assignedUserId === currentUser.id || isAdmin;
+      const transitionOk = project ? relevantTransitionIds.includes(task.transitionId) : true;
+      return assignedOk && transitionOk;
+    });
+  }, [tasks, currentUser.id, isAdmin, project, relevantTransitionIds]);
 
 
-  const handleMarkDone = (taskId: string) => {
+  const handleMarkDone = useCallback((taskId: string) => {
     if (!currentUser) return;
     const updated = taskOperations.markCompleted(taskId, currentUser.id);
     if (updated) {
@@ -30,16 +38,16 @@ const UserTaskList: React.FC<{ project?: Project }> = ({ project }) => {
     } else {
       alert('Failed to mark task as completed');
     }
-  };
+  }, [currentUser, setTasks]);
 
-  const handleUndo = (taskId: string) => {
+  const handleUndo = useCallback((taskId: string) => {
     const updated = taskOperations.markIncomplete(taskId);
     if (updated) {
       setTasks(taskOperations.getAll());
     } else {
       alert('Failed to undo task completion');
     }
-  };
+  }, [setTasks]);
 
   if (visibleTasks.length === 0) return null;
 
@@ -94,7 +102,7 @@ const UserTaskList: React.FC<{ project?: Project }> = ({ project }) => {
       </table>
     </div>
   );
-};
+});
 
 export default UserTaskList;
 
