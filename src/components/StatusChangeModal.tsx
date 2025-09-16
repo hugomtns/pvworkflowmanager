@@ -35,16 +35,11 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
   const incompleteTasks = selected?.incompleteTasks || [];
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200
-    }}>
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', width: '90%', maxWidth: '560px', padding: '1.25rem' }}>
-        <h3 style={{ margin: 0, marginBottom: '0.75rem' }}>Change Status</h3>
+    <div className="modal-overlay">
+      <div className="modal-container modal-status">
+        <h3 className="modal-title">Change Status</h3>
         {options.length === 0 ? (
-          <div style={{
-            backgroundColor: '#fff3cd', border: '1px solid #ffeeba', color: '#856404', padding: '0.75rem', borderRadius: '6px', marginBottom: '0.75rem'
-          }}>
+          <div className="modal-warning">
             No valid next statuses from current status.
           </div>
         ) : (
@@ -85,16 +80,16 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ project, workflow
 
                 {/* Task blocking info */}
                 {selected.blockedByTasks ? (
-                  <div style={{ marginTop: 12, background: '#fff3f3', border: '1px solid #ffd6d6', padding: 8, borderRadius: 6 }}>
-                    <div style={{ fontWeight: 700, color: '#b71c1c', marginBottom: 6 }}>Blocked by incomplete required tasks</div>
-                    <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                  <div className="modal-task-blocked">
+                    <div className="modal-task-blocked-title">Blocked by incomplete required tasks</div>
+                    <ul>
                       {incompleteTasks.map(task => (
-                        <li key={task.id} style={{ fontSize: '0.95rem', color: '#333' }}>
+                        <li key={task.id}>
                           {task.name} — <em style={{ color: '#555' }}>{idToUserName[task.assignedUserId] || task.assignedUserId}</em>
                         </li>
                       ))}
                     </ul>
-                    <div style={{ fontSize: '0.9rem', color: '#666', marginTop: 8 }}>Complete the required tasks before performing this transition.</div>
+                    <div className="modal-task-blocked-note">Complete the required tasks before performing this transition.</div>
                   </div>
                 ) : null}
               </div>

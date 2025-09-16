@@ -1,0 +1,411 @@
+/* Form Styles for PV Workflow Manager */
+
+/* Base form container */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form.compact {
+  gap: var(--spacing-md);
+}
+
+/* Form field container */
+.form-field {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-field.compact {
+  margin-bottom: var(--spacing-md);
+}
+
+/* Form labels */
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-size: var(--font-base);
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: var(--error-red);
+}
+
+.form-label.inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.form-label.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-normal);
+  cursor: pointer;
+}
+
+/* Form inputs */
+.form-input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  font-family: inherit;
+  background-color: var(--bg-input);
+  transition: border-color var(--transition-normal);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  border-width: 1.5px;
+  background-color: var(--white);
+}
+
+.form-input.error {
+  border-color: var(--error-red);
+}
+
+.form-input.error:focus {
+  border-color: var(--error-red);
+}
+
+/* Input sizes */
+.form-input.sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-sm);
+}
+
+.form-input.lg {
+  padding: var(--spacing-lg);
+  font-size: var(--font-lg);
+}
+
+/* Select fields */
+.form-select {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  font-family: inherit;
+  background-color: var(--bg-input);
+  cursor: pointer;
+  transition: border-color var(--transition-normal);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  border-width: 1.5px;
+  background-color: var(--white);
+}
+
+.form-select.error {
+  border-color: var(--error-red);
+}
+
+/* Textarea fields */
+.form-textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  font-family: inherit;
+  background-color: var(--bg-input);
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--transition-normal);
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  border-width: 1.5px;
+  background-color: var(--white);
+}
+
+.form-textarea.error {
+  border-color: var(--error-red);
+}
+
+/* Checkbox and radio inputs */
+.form-checkbox,
+.form-radio {
+  width: auto;
+  margin-right: var(--spacing-sm);
+  cursor: pointer;
+}
+
+/* Color picker */
+.form-color {
+  width: 60px;
+  height: 40px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.form-color:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* Date inputs */
+.form-date {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  font-family: inherit;
+  background-color: var(--bg-input);
+  transition: border-color var(--transition-normal);
+}
+
+.form-date:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  border-width: 1.5px;
+  background-color: var(--white);
+}
+
+/* Error messages */
+.form-error {
+  color: var(--error-red);
+  font-size: var(--font-xs);
+  margin-top: var(--spacing-xs);
+  display: block;
+}
+
+/* Helper text */
+.form-help {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  margin-top: var(--spacing-xs);
+  display: block;
+}
+
+/* Form groups */
+.form-group {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.form-group.compact {
+  gap: var(--spacing-md);
+}
+
+.form-group.vertical {
+  flex-direction: column;
+}
+
+.form-group.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.form-group.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* Color picker group */
+.form-color-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.form-color-preview {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--white);
+  box-shadow: var(--shadow-overlay);
+}
+
+.form-color-value {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+/* Checkbox group */
+.form-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.form-checkbox-group.inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-primary);
+}
+
+.form-actions.space-between {
+  justify-content: space-between;
+}
+
+.form-actions.center {
+  justify-content: center;
+}
+
+.form-actions.no-border {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* Search field */
+.form-search {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  background-color: var(--bg-primary);
+  transition: border-color var(--transition-normal);
+}
+
+.form-search:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  background-color: var(--white);
+}
+
+.form-search::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Form sections */
+.form-section {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--gray-50);
+}
+
+.form-section-title {
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+/* Approval fields (used in transitions) */
+.form-approval-section {
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  max-height: 150px;
+  overflow: auto;
+  background-color: var(--white);
+}
+
+.form-approval-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: var(--spacing-xs);
+}
+
+.form-approval-item:last-child {
+  margin-bottom: 0;
+}
+
+.form-approval-item:hover {
+  background-color: var(--gray-50);
+}
+
+/* Project assignment fields */
+.form-assignment-group {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.form-assignment-option {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .form-group.grid-2,
+  .form-group.grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group:not(.vertical) {
+    flex-direction: column;
+  }
+
+  .form-color-group {
+    flex-wrap: wrap;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-assignment-group {
+    flex-direction: column;
+  }
+}
+
+/* Integration with existing task form classes */
+.task-form .form-field {
+  margin-bottom: var(--spacing-lg);
+}
+
+.task-form .form-label {
+  display: flex;
+  flex-direction: column;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  gap: var(--spacing-xs);
+}
+
+.task-form .form-input,
+.task-form .form-select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-secondary);
+  font-size: var(--font-base);
+  margin-top: var(--spacing-xs);
+  background: var(--bg-input);
+  transition: border var(--transition-normal);
+}
+
+.task-form .form-input:focus,
+.task-form .form-select:focus {
+  border: 1.5px solid var(--primary-blue);
+  outline: none;
+}

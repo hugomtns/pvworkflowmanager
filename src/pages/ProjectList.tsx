@@ -76,13 +76,7 @@ const ProjectList: React.FC = () => {
           placeholder="Search projects..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            borderRadius: '4px',
-            border: '1px solid #ddd',
-            fontSize: '1rem'
-          }}
+          className="form-search"
         />
       </div>
       {/* Project Cards */}

@@ -66,91 +66,49 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '2rem',
-        width: '500px',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <h3 style={{ margin: '0 0 1.5rem 0' }}>
+    <div className="modal-overlay">
+      <div className="modal-container modal-form">
+        <h3 className="modal-title">
           {status ? 'Edit Status' : 'Create New Status'}
         </h3>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="form">
           {/* Status Name */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem',
-              fontWeight: 'bold'
-            }}>
-              Status Name *
+          <div className="form-field">
+            <label className="form-label required">
+              Status Name
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: errors.name ? '1px solid #f44336' : '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '1rem'
-              }}
+              className={`form-input ${errors.name ? 'error' : ''}`}
               placeholder="e.g., In Progress, Under Review"
             />
             {errors.name && (
-              <div style={{ color: '#f44336', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+              <span className="form-error">
                 {errors.name}
-              </div>
+              </span>
             )}
           </div>
 
           {/* Status Color */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem',
-              fontWeight: 'bold'
-            }}>
+          <div className="form-field">
+            <label className="form-label">
               Status Color
             </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="form-color-group">
               <input
                 type="color"
                 value={formData.color}
                 onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                style={{
-                  width: '60px',
-                  height: '40px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
+                className="form-color"
               />
-              <div style={{
-                width: '30px',
-                height: '30px',
-                backgroundColor: formData.color,
-                borderRadius: '50%',
-                border: '2px solid white',
-                boxShadow: '0 0 0 1px #ddd'
-              }} />
-              <span style={{ fontSize: '0.9rem', color: '#666' }}>
+              <div
+                className="form-color-preview"
+                style={{ backgroundColor: formData.color }}
+              />
+              <span className="form-color-value">
                 {formData.color}
               </span>
             </div>
@@ -223,34 +181,17 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
           </div>
 
           {/* Action Buttons */}
-          <div style={{
-            display: 'flex',
-            gap: '1rem',
-            justifyContent: 'flex-end'
-          }}>
+          <div className="form-actions">
             <button
               type="button"
               onClick={onCancel}
-              style={{
-                padding: '0.75rem 1.5rem',
-                border: '1px solid #ddd',
-                backgroundColor: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="btn btn-cancel btn-lg"
             >
               Cancel
             </button>
             <button
               type="submit"
-              style={{
-                padding: '0.75rem 1.5rem',
-                border: 'none',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="btn btn-success btn-lg"
             >
               {status ? 'Update Status' : 'Create Status'}
             </button>

@@ -1,5 +1,7 @@
 @import './styles/variables.css';
 @import './styles/buttons.css';
+@import './styles/modals.css';
+@import './styles/forms.css';
 
 * {
   margin: 0;
