@@ -53,7 +53,7 @@ export const useModal = (options: UseModalOptions = {}): UseModalReturn => {
   } = options;
 
   const [isOpen, setIsOpen] = useState(false);
-  const backdropRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null!);
 
   const openModal = useCallback(() => {
     setIsOpen(true);
@@ -116,9 +116,9 @@ export const useModal = (options: UseModalOptions = {}): UseModalReturn => {
   };
 
   const modalProps = {
-    role: 'dialog',
+    role: 'dialog' as const,
     'aria-modal': true as const,
-    tabIndex: -1
+    tabIndex: -1 as const
   };
 
   return {

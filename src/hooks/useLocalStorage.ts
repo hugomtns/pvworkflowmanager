@@ -19,7 +19,7 @@ export interface SerializationOptions {
  * Default JSON serialization with Date handling
  */
 const defaultSerialize = (value: any): string => {
-  return JSON.stringify(value, (key, val) => {
+  return JSON.stringify(value, (_, val) => {
     // Convert Date objects to ISO strings
     if (val instanceof Date) {
       return val.toISOString();
@@ -32,7 +32,7 @@ const defaultSerialize = (value: any): string => {
  * Default JSON deserialization with Date parsing
  */
 const defaultDeserialize = (value: string): any => {
-  return JSON.parse(value, (key, val) => {
+  return JSON.parse(value, (_, val) => {
     // Convert ISO strings back to Date objects
     if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
       return new Date(val);
@@ -194,7 +194,7 @@ export const useSyncedLocalStorage = <T>(
 
   // Listen for storage changes from other tabs
   useEffect(() => {
-    const { serialize, deserialize = defaultDeserialize } = options;
+    const { deserialize = defaultDeserialize } = options;
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue !== null) {
