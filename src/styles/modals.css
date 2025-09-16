@@ -58,10 +58,31 @@
   height: 90vh;
 }
 
+/* Additional size variants for BaseModal */
+.modal-sm {
+  width: 320px;
+  max-width: 95vw;
+}
+
 /* Modal header */
 .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
   border-bottom: 1px solid var(--border-primary);
+  position: relative;
+}
+
+/* Modal content */
+.modal-content {
+  padding: var(--spacing-xl);
+  overflow-y: auto;
+  max-height: calc(90vh - 120px); /* Account for header and footer */
+}
+
+.modal-content.no-padding {
+  padding: 0;
 }
 
 .modal-title {

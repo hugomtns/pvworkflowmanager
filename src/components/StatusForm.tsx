@@ -2,6 +2,7 @@ import React from 'react';
 import type { Status } from '../types';
 import { validateStatus } from '../utils/validation';
 import { useEntityFormValidation } from '../hooks/useFormValidation';
+import { BaseButton, BaseInput } from './common';
 
 interface StatusFormProps {
   status?: Status; // undefined for create, Status object for edit
@@ -53,23 +54,14 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
 
         <form onSubmit={handleSubmit} className="form">
           {/* Status Name */}
-          <div className="form-field">
-            <label className="form-label required">
-              Status Name
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => updateField('name', e.target.value)}
-              className={getFieldClassName('form-input', 'name')}
-              placeholder="e.g., In Progress, Under Review"
-            />
-            {hasFieldError('name') && (
-              <span className="form-error">
-                {getFieldError('name')}
-              </span>
-            )}
-          </div>
+          <BaseInput
+            label="Status Name"
+            required
+            value={formData.name}
+            onChange={(e) => updateField('name', e.target.value)}
+            error={hasFieldError('name') ? getFieldError('name') : undefined}
+            placeholder="e.g., In Progress, Under Review"
+          />
 
           {/* Status Color */}
           <div className="form-field">
@@ -138,19 +130,21 @@ const StatusForm: React.FC<StatusFormProps> = ({ status, onSave, onCancel }) => 
 
           {/* Action Buttons */}
           <div className="form-actions">
-            <button
+            <BaseButton
               type="button"
+              variant="cancel"
+              size="lg"
               onClick={onCancel}
-              className="btn btn-cancel btn-lg"
             >
               Cancel
-            </button>
-            <button
+            </BaseButton>
+            <BaseButton
               type="submit"
-              className="btn btn-success btn-lg"
+              variant="success"
+              size="lg"
             >
               {status ? 'Update Status' : 'Create Status'}
-            </button>
+            </BaseButton>
           </div>
         </form>
       </div>

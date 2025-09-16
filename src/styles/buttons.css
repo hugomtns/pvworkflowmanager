@@ -201,3 +201,68 @@
   background-color: var(--primary-blue);
   color: var(--white);
 }
+
+/* Full width button modifier */
+.btn-full-width {
+  width: 100%;
+}
+
+/* Loading state */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.btn-loading .btn-text,
+.btn-loading .btn-icon,
+.btn-loading .btn-icon-after {
+  opacity: 0.7;
+}
+
+.btn-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btn-spin 0.8s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Button icon spacing */
+.btn .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--spacing-xs);
+}
+
+.btn .btn-icon-after {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--spacing-xs);
+}
+
+.btn .btn-text {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Warning button */
+.btn-warning {
+  background-color: var(--warning-yellow);
+  color: var(--white);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-warning:hover:not(:disabled) {
+  background-color: #f57c00;
+}

@@ -405,3 +405,49 @@
   border: 1.5px solid var(--primary-blue);
   outline: none;
 }
+
+/* Input wrapper with icons */
+.form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input-wrapper .form-input.with-icon {
+  padding-left: 2.5rem;
+}
+
+.form-input-wrapper .form-input.with-icon-after {
+  padding-right: 2.5rem;
+}
+
+.form-input-icon {
+  position: absolute;
+  left: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.form-input-icon-after {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Input states with icons */
+.form-input-wrapper:focus-within .form-input-icon,
+.form-input-wrapper:focus-within .form-input-icon-after {
+  color: var(--primary-blue);
+}
+
+.form-input-wrapper .form-input.error ~ .form-input-icon,
+.form-input-wrapper .form-input.error ~ .form-input-icon-after {
+  color: var(--error-red);
+}
