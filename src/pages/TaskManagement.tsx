@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import type { Task } from '../types';
 
 const TaskManagement: React.FC = () => {
-  const { tasks, workflows, users, transitions, addTask, updateTask, deleteTask, isAdmin } = useContext(AppContext);
+  const { tasks, users, transitions, addTask, updateTask, deleteTask, isAdmin } = useContext(AppContext);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [filters, setFilters] = useState({ completion: '', search: '' });

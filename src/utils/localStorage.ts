@@ -12,7 +12,7 @@ const STORAGE_KEYS = {
   // Generic save function
   export const saveToStorage = <T>(key: string, data: T[]): void => {
     try {
-      const serializedData = JSON.stringify(data, (key, value) => {
+      const serializedData = JSON.stringify(data, (_ , value) => {
         // Convert Date objects to ISO strings
         if (value instanceof Date) {
           return value.toISOString();
@@ -31,7 +31,7 @@ const STORAGE_KEYS = {
       const data = localStorage.getItem(key);
       if (!data) return [];
       
-      return JSON.parse(data, (key, value) => {
+      return JSON.parse(data, (_, value) => {
         // Convert ISO strings back to Date objects
         if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
           return new Date(value);

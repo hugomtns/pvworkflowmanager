@@ -1,0 +1,107 @@
+/* CSS Variables for PV Workflow Manager Design System */
+
+:root {
+  /* Primary Colors */
+  --primary-blue: #1976d2;
+  --primary-blue-dark: #1251a3;
+  --primary-blue-light: #bbdefb;
+
+  /* Status Colors */
+  --error-red: #f44336;
+  --error-red-light: #fdecea;
+  --error-red-border: #f5c2c0;
+  --success-green: #4caf50;
+  --warning-yellow: #856404;
+  --warning-yellow-bg: #fff3cd;
+  --warning-yellow-border: #ffeeba;
+  --purple: #9c27b0;
+
+  /* Neutral Colors */
+  --white: #ffffff;
+  --gray-50: #fafafa;
+  --gray-100: #f9f9f9;
+  --gray-200: #f5f5f5;
+  --gray-300: #eee;
+  --gray-400: #ddd;
+  --gray-500: #b0bec5;
+  --gray-600: #666;
+  --gray-700: #555;
+  --gray-800: #333;
+  --gray-900: #222;
+
+  /* Text Colors */
+  --text-primary: #222;
+  --text-secondary: #666;
+  --text-tertiary: #888;
+  --text-error: #b71c1c;
+  --text-success: #2e7d32;
+
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #f9f9f9;
+  --bg-input: #f7fbff;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-overlay-light: rgba(0, 0, 0, 0.35);
+  --bg-warning: #fff3cd;
+  --bg-error: #fff3f3;
+  --bg-task-blocked: #fff3f3;
+
+  /* Border Colors */
+  --border-primary: #ddd;
+  --border-secondary: #b0bec5;
+  --border-error: #f44336;
+  --border-warning: #ffeeba;
+  --border-task-blocked: #ffd6d6;
+
+  /* Spacing Scale */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 0.75rem;   /* 12px */
+  --spacing-lg: 1rem;      /* 16px */
+  --spacing-xl: 1.5rem;    /* 24px */
+  --spacing-2xl: 2rem;     /* 32px */
+  --spacing-3xl: 2.5rem;   /* 40px */
+
+  /* Font Sizes */
+  --font-xs: 0.8rem;       /* 12.8px */
+  --font-sm: 0.9rem;       /* 14.4px */
+  --font-base: 1rem;       /* 16px */
+  --font-lg: 1.2rem;       /* 19.2px */
+  --font-xl: 1.4rem;       /* 22.4px */
+  --font-2xl: 1.5rem;      /* 24px */
+
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 50%;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 1px 4px rgba(25, 118, 210, 0.2);
+  --shadow-lg: 0 8px 32px rgba(25, 118, 210, 0.18), 0 1.5px 8px rgba(25, 118, 210, 0.2);
+  --shadow-overlay: 0 0 0 1px var(--border-primary);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Z-index Scale */
+  --z-dropdown: 1000;
+  --z-modal: 1200;
+  --z-tooltip: 1300;
+  --z-overlay: 99999;
+
+  /* Font Family */
+  --font-family-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  --font-family-fallback: Arial, sans-serif;
+}
