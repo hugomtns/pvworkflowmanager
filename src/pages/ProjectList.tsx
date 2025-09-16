@@ -7,6 +7,7 @@ import StatusChangeModal from '../components/StatusChangeModal';
 import StatusHistory from '../components/StatusHistory';
 import UserTaskList from '../components/UserTaskList';
 import ProjectForm from '../components/ProjectForm';
+import ActionMenu, { type ActionMenuOption } from '../components/ActionMenu';
 import { AppContext } from '../context/AppContext';
 import { formatDate } from '../utils/common';
 
@@ -150,6 +151,30 @@ const ProjectList: React.FC = () => {
     setProjectToEdit(undefined);
   }, []);
 
+  // Create action menu options for each project
+  const createProjectActionMenu = useCallback((project: Project): ActionMenuOption[] => [
+    {
+      label: 'View Details',
+      icon: '👁️',
+      onClick: () => handleViewProject(project)
+    },
+    {
+      label: 'Edit Project',
+      icon: '✏️',
+      onClick: () => handleEditProject(project)
+    },
+    {
+      label: 'Change Status',
+      icon: '🔄',
+      onClick: () => handleStatusModal(project)
+    },
+    {
+      label: 'View History',
+      icon: '📋',
+      onClick: () => handleHistoryModal(project)
+    }
+  ], [handleViewProject, handleEditProject, handleStatusModal, handleHistoryModal]);
+
   return (
     <div>
       <div style={{ 
@@ -215,8 +240,8 @@ const ProjectList: React.FC = () => {
                   padding: '1.5rem',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   textAlign: 'left',
-                  cursor: 'pointer',
-                  transition: 'box-shadow 0.2s'
+                  transition: 'box-shadow 0.2s',
+                  position: 'relative'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
@@ -225,11 +250,27 @@ const ProjectList: React.FC = () => {
                   e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                 }}
               >
+                {/* Action Menu */}
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px'
+                }}>
+                  <ActionMenu
+                    options={createProjectActionMenu(project)}
+                    buttonStyle={{
+                      fontSize: '18px',
+                      padding: '6px 10px'
+                    }}
+                  />
+                </div>
+
                 {/* Project Title */}
-                <h3 style={{ 
+                <h3 style={{
                   margin: '0 0 0.5rem 0',
                   color: '#333',
-                  fontSize: '1.25rem'
+                  fontSize: '1.25rem',
+                  paddingRight: '40px' // Add padding to avoid overlap with action menu
                 }}>
                   {project.title}
                 </h3>
@@ -288,32 +329,6 @@ const ProjectList: React.FC = () => {
                   </div>
                   <div>
                     <strong>Creator:</strong> {creator?.name || 'Unknown User'}
-                  </div>
-                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => handleViewProject(project)}
-                      style={{ backgroundColor: '#1976d2', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '600' }}
-                    >
-                      View Details
-                    </button>
-                    <button
-                      onClick={() => handleEditProject(project)}
-                      style={{ backgroundColor: '#ff9800', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
-                    >
-                      Edit Project
-                    </button>
-                    <button
-                      onClick={() => handleStatusModal(project)}
-                      style={{ backgroundColor: '#6a1b9a', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
-                    >
-                      Change Status
-                    </button>
-                    <button
-                      onClick={() => handleHistoryModal(project)}
-                      style={{ backgroundColor: '#2196f3', color: 'white', border: 'none', padding: '0.4rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', cursor: 'pointer' }}
-                    >
-                      View History
-                    </button>
                   </div>
                 </div>
               </div>
